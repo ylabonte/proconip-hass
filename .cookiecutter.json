@@ -1,0 +1,11 @@
+{
+  "_output_dir": "/Users/yannic/workspace/proconip-hass",
+  "_template": "git+ssh://git@github.com/oncleben31/cookiecutter-homeassistant-custom-component",
+  "class_name_prefix": "Proconip",
+  "domain_name": "proconip",
+  "friendly_name": "ProCon.IP Pool Controller",
+  "github_user": "ylabonte",
+  "project_name": "proconip",
+  "test_suite": "yes",
+  "version": "0.0.1"
+}

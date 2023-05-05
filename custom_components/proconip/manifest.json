@@ -1,0 +1,10 @@
+{
+  "domain": "proconip",
+  "name": "ProCon.IP Pool Controller",
+  "documentation": "https://github.com/ylabonte/proconip-hass",
+  "issue_tracker": "https://github.com/ylabonte/proconip-hass/issues",
+  "dependencies": [],
+  "config_flow": true,
+  "codeowners": ["@ylabonte"],
+  "requirements": ["proconip==0.0.1"]
+}
