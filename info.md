@@ -11,20 +11,20 @@
 
 **This component will set up the following platforms.**
 
-| Platform        | Description                         |
-| --------------- | ----------------------------------- |
-| `binary_sensor` | Show something `True` or `False`.   |
-| `sensor`        | Show info from API.                 |
-| `switch`        | Switch something `True` or `False`. |
+| Platform        | Description                                                      |
+| --------------- |------------------------------------------------------------------|
+| `binary_sensor` | Show binary/flags from `GetState.csv` API.                       |
+| `sensor`        | Show diverse data from `GetState.csv` API.                       |
+| `switch`        | Switch relays `On` or `Off` and toggle `Auto` and `Manual` mode. |
 
-![example][exampleimg]
+![picture]
 
 {% if not installed %}
 
 ## Installation
 
 1. Click install.
-1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "ProCon.IP Pool Controller".
+2. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "ProCon.IP Pool Controller".
 
 {% endif %}
 
@@ -41,20 +41,21 @@ Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [in
 ---
 
 [integration_blueprint]: https://github.com/custom-components/integration_blueprint
-[buymecoffee]: https://www.buymeacoffee.com/ludeeus
+[buymecoffee]: https://www.buymeacoffee.com/ylabonte
 [buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
-[commits-shield]: https://img.shields.io/github/commit-activity/y/ylabonte/proconip.svg?style=for-the-badge
-[commits]: https://github.com/ylabonte/proconip/commits/main
+[commits-shield]: https://img.shields.io/github/commit-activity/y/ylabonte/homeassistant-proconip.svg?style=for-the-badge
+[commits]: https://github.com/ylabonte/homeassistant-proconip/commits/main
 [hacs]: https://hacs.xyz
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
 [discord]: https://discord.gg/Qa5fW2R
 [discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
-[exampleimg]: example.png
+[projectlogo]: logo.png
+[picture]: picture.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/
-[license]: https://github.com/ylabonte/proconip/blob/main/LICENSE
-[license-shield]: https://img.shields.io/github/license/ylabonte/proconip.svg?style=for-the-badge
+[license]: https://github.com/ylabonte/homeassistant-proconip/blob/main/LICENSE
+[license-shield]: https://img.shields.io/github/license/ylabonte/homeassistant-proconip.svg?style=for-the-badge
 [maintenance-shield]: https://img.shields.io/badge/maintainer-%40ylabonte-blue.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/ylabonte/proconip.svg?style=for-the-badge
-[releases]: https://github.com/ylabonte/proconip/releases
+[releases-shield]: https://img.shields.io/github/release/ylabonte/homeassistant-proconip.svg?style=for-the-badge
+[releases]: https://github.com/ylabonte/homeassistant-proconip/releases
 [user_profile]: https://github.com/ylabonte

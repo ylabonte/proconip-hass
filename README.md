@@ -19,13 +19,13 @@ please look at the [User Guide in the Cookiecutter documentation](https://cookie
 
 **This component will set up the following platforms.**
 
-| Platform        | Description                                                               |
-| --------------- | ------------------------------------------------------------------------- |
-| `binary_sensor` | Show something `True` or `False`.                                         |
-| `sensor`        | Show info from ProCon.IP Pool Controller API. |
-| `switch`        | Switch something `True` or `False`.                                       |
+| Platform        | Description                                                      |
+| --------------- |------------------------------------------------------------------|
+| `binary_sensor` | Show binary/flags from `GetState.csv` API.                       |
+| `sensor`        | Show diverse data from `GetState.csv` API.                       |
+| `switch`        | Switch relays `On` or `Off` and toggle `Auto` and `Manual` mode. |
 
-![example][exampleimg]
+![picture]
 
 ## Installation
 
@@ -84,7 +84,8 @@ Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [in
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
 [discord]: https://discord.gg/Qa5fW2R
 [discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
-[exampleimg]: example.png
+[projectlogo]: logo.png
+[picture]: picture.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/
 [license-shield]: https://img.shields.io/github/license/ylabonte/homeassistant-proconip.svg?style=for-the-badge
