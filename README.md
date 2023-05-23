@@ -7,23 +7,20 @@
 [![pre-commit][pre-commit-shield]][pre-commit]
 [![Black][black-shield]][black]
 
-[![hacs][hacsbadge]][hacs]
+[![hacs][hacs-badge]][hacs]
 [![Project Maintenance][maintenance-shield]][user_profile]
-[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
+[![BuyMeCoffee][buymeacoffee-badge]][buymeacoffee]
 
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
-**TO BE REMOVED: If you need help, as a developer, to use this custom component tempalte,
-please look at the [User Guide in the Cookiecutter documentation](https://cookiecutter-homeassistant-custom-component.readthedocs.io/en/stable/quickstart.html)**
-
 **This component will set up the following platforms.**
 
-| Platform        | Description                                                      |
-| --------------- |------------------------------------------------------------------|
-| `binary_sensor` | Show binary/flags from `GetState.csv` API.                       |
-| `sensor`        | Show diverse data from `GetState.csv` API.                       |
-| `switch`        | Switch relays `On` or `Off` and toggle `Auto` and `Manual` mode. |
+| Platform        | Description                                                           |
+| --------------- |-----------------------------------------------------------------------|
+| `binary_sensor` | Show flags/binary data from `GetState.csv` API.                       |
+| `sensor`        | Show various data from `GetState.csv` API.                            |
+| `switch`        | Switch relays `On`/`Off` and toggle between `Auto` and `Manual` mode. |
 
 ![picture]
 
@@ -46,7 +43,6 @@ custom_components/proconip/translations/nb.json
 custom_components/proconip/translations/sensor.en.json
 custom_components/proconip/translations/sensor.fr.json
 custom_components/proconip/translations/sensor.nb.json
-custom_components/proconip/translations/sensor.nb.json
 custom_components/proconip/__init__.py
 custom_components/proconip/api.py
 custom_components/proconip/binary_sensor.py
@@ -61,9 +57,22 @@ custom_components/proconip/switch.py
 
 <!---->
 
+## Support for this integration
+
+If you have trouble with this integration and want to get support, you can open an [issue on github][issues], so others
+can benefit from the solution, too.
+
+## Support this integration
+
+If you want to support this integration or say thank you, you can:
+
+[<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 144px !important;" >](https://www.buymeacoffee.com/ylabonte)
+
 ## Contributions are welcome!
 
-If you want to contribute to this please read the [Contribution guidelines](CONTRIBUTING.md)
+If you want to contribute to this project please read the [Contribution guidelines](CONTRIBUTING.md).
+And if you need a starting point, you could take a look at the [Home Assistant documentation for the file structure when building integrations][building_integration_docs]
+or read the [Home Assistant Custom Component Cookiecutter documentation][cookiecutter_docs].
 
 ## Credits
 
@@ -76,12 +85,12 @@ Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [in
 [integration_blueprint]: https://github.com/custom-components/integration_blueprint
 [black]: https://github.com/psf/black
 [black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge
-[buymecoffee]: https://www.buymeacoffee.com/ylabonte
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
+[buymeacoffee]: https://www.buymeacoffee.com/ylabonte
+[buymeacoffee-badge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
 [commits-shield]: https://img.shields.io/github/commit-activity/y/ylabonte/homeassistant-proconip.svg?style=for-the-badge
 [commits]: https://github.com/ylabonte/homeassistant-proconip/commits/main
 [hacs]: https://hacs.xyz
-[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[hacs-badge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
 [discord]: https://discord.gg/Qa5fW2R
 [discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
 [projectlogo]: logo.png
@@ -95,3 +104,6 @@ Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [in
 [releases-shield]: https://img.shields.io/github/release/ylabonte/homeassistant-proconip.svg?style=for-the-badge
 [releases]: https://github.com/ylabonte/homeassistant-proconip/releases
 [user_profile]: https://github.com/ylabonte
+[issues]: https://github.com/ylabonte/proconip-hass/issues
+[cookiecutter_docs]: https://cookiecutter-homeassistant-custom-component.readthedocs.io/en/stable/quickstart.html
+[building_integration_docs]: https://developers.home-assistant.io/docs/creating_integration_file_structure

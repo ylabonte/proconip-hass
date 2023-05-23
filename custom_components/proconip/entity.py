@@ -4,6 +4,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import ATTRIBUTION
 from .const import DOMAIN
 from .const import NAME
+from .const import MANUFACTURER
 from .const import VERSION
 
 
@@ -23,7 +24,7 @@ class ProconipEntity(CoordinatorEntity):
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": NAME,
             "model": VERSION,
-            "manufacturer": NAME,
+            "manufacturer": MANUFACTURER,
         }
 
     @property

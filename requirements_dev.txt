@@ -1,2 +1,2 @@
 homeassistant
-proconip==0.0.1
+proconip==1.1.0

@@ -11,23 +11,31 @@ from .entity import ProconipEntity
 async def async_setup_entry(hass, entry, async_add_devices):
     """Setup binary_sensor platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_devices([ProconipBinarySensor(coordinator, entry)])
+    async_add_devices([
+        ProconipChlorineDosageEnabledBinarySensor(coordinator, entry),
+        # ProconipElectrolysisEnabledBinarySensor(coordinator, entry),
+        # ProconipPhMinusDosageEnabledBinarySensor(coordinator, entry),
+        # ProconipDosageEnabledBinarySensor(coordinator, entry),
+        # ProconipTcpIpBoostEnabledBinarySensor(coordinator, entry),
+        # ProconipSdCardEnabledBinarySensor(coordinator, entry),
+        # ProconipDmxEnabledBinarySensor(coordinator, entry),
+        # ProconipAvatarEnabledBinarySensor(coordinator, entry),
+        # ProconipRelayExtensionEnabledBinarySensor(coordinator, entry),
+        # ProconipHighBusLoadEnabledBinarySensor(coordinator, entry),
+        # ProconipRepeatedMailEnabledBinarySensor(coordinator, entry),
+        # ProconipDmxExtensionEnabledBinarySensor(coordinator, entry),
+    ])
 
 
-class ProconipBinarySensor(ProconipEntity, BinarySensorEntity):
-    """proconip binary_sensor class."""
+class ProconipChlorineDosageEnabledBinarySensor(ProconipEntity, BinarySensorEntity):
+    """proconip binary_sensor class for `GetStateData.is_chlorine_dosage_enabled()`."""
 
     @property
     def name(self):
         """Return the name of the binary_sensor."""
-        return f"{DEFAULT_NAME}_{BINARY_SENSOR}"
-
-    @property
-    def device_class(self):
-        """Return the class of this binary_sensor."""
-        return BINARY_SENSOR_DEVICE_CLASS
+        return f"{DEFAULT_NAME}_chlorine_dosage_enabled"
 
     @property
     def is_on(self):
         """Return true if the binary_sensor is on."""
-        return self.coordinator.data.get("title", "") == "foo"
+        return self.coordinator.data.is_chlorine_dosage_enabled()

@@ -5,6 +5,7 @@ from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .api import ProconipApiClient
+from .const import CONF_BASE_URL
 from .const import CONF_PASSWORD
 from .const import CONF_USERNAME
 from .const import DOMAIN
@@ -15,7 +16,7 @@ class ProconipFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for proconip."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
+    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     def __init__(self):
         """Initialize."""
@@ -31,11 +32,11 @@ class ProconipFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             valid = await self._test_credentials(
-                user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
+                user_input[CONF_BASE_URL], user_input[CONF_USERNAME], user_input[CONF_PASSWORD]
             )
             if valid:
                 return self.async_create_entry(
-                    title=user_input[CONF_USERNAME], data=user_input
+                    title=f"{user_input[CONF_USERNAME]}@{user_input[CONF_BASE_URL]}", data=user_input
                 )
             else:
                 self._errors["base"] = "auth"
@@ -54,16 +55,20 @@ class ProconipFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
-                {vol.Required(CONF_USERNAME): str, vol.Required(CONF_PASSWORD): str}
+                {
+                    vol.Required(CONF_BASE_URL): str,
+                    vol.Required(CONF_USERNAME): str,
+                    vol.Required(CONF_PASSWORD): str,
+                }
             ),
             errors=self._errors,
         )
 
-    async def _test_credentials(self, username, password):
+    async def _test_credentials(self, base_url, username, password):
         """Return true if credentials is valid."""
         try:
             session = async_create_clientsession(self.hass)
-            client = ProconipApiClient(username, password, session)
+            client = ProconipApiClient(base_url, username, password, session)
             await client.async_get_data()
             return True
         except Exception:  # pylint: disable=broad-except

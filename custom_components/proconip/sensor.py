@@ -9,21 +9,21 @@ from .entity import ProconipEntity
 async def async_setup_entry(hass, entry, async_add_devices):
     """Setup sensor platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_devices([ProconipSensor(coordinator, entry)])
+    async_add_devices([ProconipRedoxSensor(coordinator, entry)])
 
 
-class ProconipSensor(ProconipEntity):
-    """proconip Sensor class."""
+class ProconipRedoxSensor(ProconipEntity):
+    """proconip Redox Sensor class."""
 
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"{DEFAULT_NAME}_{SENSOR}"
+        return f"{DEFAULT_NAME}_redox"
 
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self.coordinator.data.get("body")
+        return self.coordinator.data.redox_electrode.value
 
     @property
     def icon(self):
@@ -32,5 +32,10 @@ class ProconipSensor(ProconipEntity):
 
     @property
     def device_class(self):
-        """Return de device class of the sensor."""
+        """Return device class of the sensor."""
         return "proconip__custom_device_class"
+
+    @property
+    def suggested_unit_of_measurement(self):
+        """Return measurement unit"""
+        return self.coordinator.data.redox_electrode.unit

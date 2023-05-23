@@ -17,6 +17,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from .api import ProconipApiClient
+from .const import CONF_BASE_URL
 from .const import CONF_PASSWORD
 from .const import CONF_USERNAME
 from .const import DOMAIN
@@ -39,11 +40,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data.setdefault(DOMAIN, {})
         _LOGGER.info(STARTUP_MESSAGE)
 
+    base_url = entry.data.get(CONF_BASE_URL)
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
 
     session = async_get_clientsession(hass)
-    client = ProconipApiClient(username, password, session)
+    client = ProconipApiClient(base_url, username, password, session)
 
     coordinator = ProconipDataUpdateCoordinator(hass, client=client)
     await coordinator.async_refresh()
@@ -66,6 +68,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 class ProconipDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching data from the API."""
+
+
 
     def __init__(
         self,

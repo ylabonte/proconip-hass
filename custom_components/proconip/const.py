@@ -1,11 +1,12 @@
 """Constants for ProCon.IP Pool Controller."""
 # Base component constants
 NAME = "ProCon.IP Pool Controller"
+MANUFACTURER = "Pool Digital"
 DOMAIN = "proconip"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "0.0.1"
+VERSION = "1.0.0"
 
-ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
+ATTRIBUTION = "Data provided by your ProCon.IP pool controller from Pool Digital."
 ISSUE_URL = "https://github.com/ylabonte/proconip/issues"
 
 # Icons
@@ -23,6 +24,7 @@ PLATFORMS = [BINARY_SENSOR, SENSOR, SWITCH]
 
 # Configuration and options
 CONF_ENABLED = "enabled"
+CONF_BASE_URL = "base_url"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 

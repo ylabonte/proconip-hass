@@ -11,26 +11,26 @@ from .entity import ProconipEntity
 async def async_setup_entry(hass, entry, async_add_devices):
     """Setup sensor platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_devices([ProconipBinarySwitch(coordinator, entry)])
+    async_add_devices([ProconipRelay1Switch(coordinator, entry)])
 
 
-class ProconipBinarySwitch(ProconipEntity, SwitchEntity):
+class ProconipRelay1Switch(ProconipEntity, SwitchEntity):
     """proconip switch class."""
 
     async def async_turn_on(self, **kwargs):  # pylint: disable=unused-argument
         """Turn on the switch."""
-        await self.coordinator.api.async_set_title("bar")
+        await self.coordinator.api.async_switch_on(0)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs):  # pylint: disable=unused-argument
         """Turn off the switch."""
-        await self.coordinator.api.async_set_title("foo")
+        await self.coordinator.api.async_switch_off(0)
         await self.coordinator.async_request_refresh()
 
     @property
     def name(self):
         """Return the name of the switch."""
-        return f"{DEFAULT_NAME}_{SWITCH}"
+        return f"{DEFAULT_NAME}_relay_1"
 
     @property
     def icon(self):
@@ -40,4 +40,4 @@ class ProconipBinarySwitch(ProconipEntity, SwitchEntity):
     @property
     def is_on(self):
         """Return true if the switch is on."""
-        return self.coordinator.data.get("title", "") == "foo"
+        return self.coordinator.data.get_relay(0).is_on()

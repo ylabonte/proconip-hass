@@ -11,11 +11,11 @@
 
 **This component will set up the following platforms.**
 
-| Platform        | Description                                                      |
-| --------------- |------------------------------------------------------------------|
-| `binary_sensor` | Show binary/flags from `GetState.csv` API.                       |
-| `sensor`        | Show diverse data from `GetState.csv` API.                       |
-| `switch`        | Switch relays `On` or `Off` and toggle `Auto` and `Manual` mode. |
+| Platform        | Description                                                           |
+| --------------- |-----------------------------------------------------------------------|
+| `binary_sensor` | Show binary/flags from `GetState.csv` API.                            |
+| `sensor`        | Show diverse data from `GetState.csv` API.                            |
+| `switch`        | Switch relays `On`/`Off` and toggle between `Auto` and `Manual` mode. |
 
 ![picture]
 
@@ -36,7 +36,7 @@
 
 This project was generated from [@oncleben31](https://github.com/oncleben31)'s [Home Assistant Custom Component Cookiecutter](https://github.com/oncleben31/cookiecutter-homeassistant-custom-component) template.
 
-Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [integration_blueprint][integration_blueprint] template
+Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [integration_blueprint][integration_blueprint] template.
 
 ---
 
