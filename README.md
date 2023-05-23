@@ -76,12 +76,14 @@ or read the [Home Assistant Custom Component Cookiecutter documentation][cookiec
 
 ## Credits
 
-This project was generated from [@oncleben31](https://github.com/oncleben31)'s [Home Assistant Custom Component Cookiecutter](https://github.com/oncleben31/cookiecutter-homeassistant-custom-component) template.
+This project was generated from [@oncleben31](https://github.com/oncleben31)'s [Home Assistant Custom Component Cookiecutter](https://github.com/oncleben31/cookiecutter-homeassistant-custom-component) template, which was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [integration_blueprint][integration_blueprint]
+template.
 
-Code template was mainly taken from [@Ludeeus](https://github.com/ludeeus)'s [integration_blueprint][integration_blueprint] template
+And finally I used the [updated integration blueprint][updated_integration_blueprint] from [@Ludeeus](https://github.com/ludeeus) to get things working.
 
 ---
 
+[updated_integration_blueprint]: https://github.com/ludeeus/integration_blueprint
 [integration_blueprint]: https://github.com/custom-components/integration_blueprint
 [black]: https://github.com/psf/black
 [black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge

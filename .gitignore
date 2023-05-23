@@ -4,3 +4,6 @@ pythonenv*
 .coverage
 venv
 .venv
+
+
+.idea
