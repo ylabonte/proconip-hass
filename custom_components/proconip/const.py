@@ -11,6 +11,7 @@ ISSUE_URL = "https://github.com/ylabonte/proconip/issues"
 
 # Icons
 ICON = "mdi:format-quote-close"
+ELECTRODE_ICON = "mdi:gauge"
 RELAY_ICON = "mdi:light-switch"
 RELAY_MODE_ICON = "mdi:refresh-auto"
 

@@ -1,7 +1,7 @@
 """Sensor platform for ProCon.IP Pool Controller."""
 from .const import DEFAULT_NAME
 from .const import DOMAIN
-from .const import ICON
+from .const import ELECTRODE_ICON
 from .entity import ProconipEntity
 
 
@@ -22,12 +22,12 @@ class ProconipRedoxSensor(ProconipEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return "%.2f" % round(self.coordinator.data.redox_electrode.value)
+        return "%.1f" % round(self.coordinator.data.redox_electrode.value, 1)
 
     @property
     def icon(self):
         """Return the icon of the sensor."""
-        return ICON
+        return ELECTRODE_ICON
 
     @property
     def device_class(self):
@@ -56,7 +56,7 @@ class ProconipPhSensor(ProconipEntity):
     @property
     def icon(self):
         """Return the icon of the sensor."""
-        return ICON
+        return ELECTRODE_ICON
 
     @property
     def device_class(self):
