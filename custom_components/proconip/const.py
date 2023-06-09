@@ -11,6 +11,8 @@ ISSUE_URL = "https://github.com/ylabonte/proconip/issues"
 
 # Icons
 ICON = "mdi:format-quote-close"
+RELAY_ICON = "mdi:light-switch"
+RELAY_MODE_ICON = "mdi:refresh-auto"
 
 # Device classes
 BINARY_SENSOR_DEVICE_CLASS = "connectivity"

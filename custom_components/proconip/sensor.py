@@ -2,7 +2,6 @@
 from .const import DEFAULT_NAME
 from .const import DOMAIN
 from .const import ICON
-from .const import SENSOR
 from .entity import ProconipEntity
 
 
@@ -23,7 +22,7 @@ class ProconipRedoxSensor(ProconipEntity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self.coordinator.data.redox_electrode.value
+        return "%.2f" % round(self.coordinator.data.redox_electrode.value)
 
     @property
     def icon(self):
@@ -39,3 +38,32 @@ class ProconipRedoxSensor(ProconipEntity):
     def suggested_unit_of_measurement(self):
         """Return measurement unit"""
         return self.coordinator.data.redox_electrode.unit
+
+
+class ProconipPhSensor(ProconipEntity):
+    """proconip pH Sensor class."""
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return f"{DEFAULT_NAME}_ph"
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        return "%.2f" % round(self.coordinator.data.ph_electrode.value, 2)
+
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return ICON
+
+    @property
+    def device_class(self):
+        """Return device class of the sensor."""
+        return "proconip__custom_device_class"
+
+    @property
+    def suggested_unit_of_measurement(self):
+        """Return measurement unit"""
+        return self.coordinator.data.ph_electrode.unit

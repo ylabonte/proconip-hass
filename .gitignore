@@ -1,3 +1,5 @@
+config
+
 __pycache__
 pythonenv*
 .python-version
@@ -7,3 +9,4 @@ venv
 
 
 .idea
+.vscode

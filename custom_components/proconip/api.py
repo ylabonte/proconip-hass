@@ -1,18 +1,13 @@
 """Sample API Client."""
-import asyncio
 import logging
-import socket
 
 import aiohttp
-import async_timeout
 
 import proconip.api
 
 from proconip.definitions import (
     ConfigObject,
-    DataObject,
     GetStateData,
-    Relay,
 )
 
 TIMEOUT = 10
@@ -24,6 +19,7 @@ HEADERS = {"Content-type": "application/json; charset=UTF-8"}
 
 
 class ProconipApiClient:
+    """ProCon.IP API Wrapper"""
     _api_config: ConfigObject
     _session: aiohttp.ClientSession
     _most_recent_data: GetStateData | None
@@ -59,5 +55,7 @@ class ProconipApiClient:
         """Set relay to auto mode."""
         if self._most_recent_data is None:
             await self.async_get_data()
-        await proconip.api.async_set_auto_mode(self._session, self._api_config, self._most_recent_data,
+        await proconip.api.async_set_auto_mode(self._session,
+                                               self._api_config,
+                                               self._most_recent_data,
                                                self._most_recent_data.get_relay(relay_id))
