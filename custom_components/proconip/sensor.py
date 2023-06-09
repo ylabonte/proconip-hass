@@ -8,7 +8,9 @@ from .entity import ProconipEntity
 async def async_setup_entry(hass, entry, async_add_devices):
     """Setup sensor platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_devices([ProconipRedoxSensor(coordinator, entry)])
+    async_add_devices([
+        ProconipRedoxSensor(coordinator, entry),
+        ProconipPhSensor(coordinator, entry)])
 
 
 class ProconipRedoxSensor(ProconipEntity):

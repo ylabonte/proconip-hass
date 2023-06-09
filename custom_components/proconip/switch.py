@@ -12,9 +12,11 @@ async def async_setup_entry(hass, entry, async_add_devices):
     """Setup sensor platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
+    relays = []
     for i in range(number_of_relays):
-        async_add_devices([ProconipRelaySwitch(coordinator, entry, i)])
-        async_add_devices([ProconipRelayMode(coordinator, entry, i)])
+        relays.append(ProconipRelaySwitch(coordinator, entry, i))
+        relays.append(ProconipRelayMode(coordinator, entry, i))
+    async_add_devices(relays)
 
 
 class ProconipRelaySwitch(ProconipEntity, SwitchEntity):
