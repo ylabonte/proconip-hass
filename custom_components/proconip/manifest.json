@@ -9,5 +9,5 @@
   "requirements": ["proconip==1.1.0"],
   "integration_type": "device",
   "iot_class": "local_polling",
-  "version": "1.0.0-alpha.2"
+  "version": "1.0.1-alpha.3"
 }
