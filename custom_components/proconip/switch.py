@@ -14,8 +14,8 @@ async def async_setup_entry(hass, entry, async_add_devices):
     number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
     relays = []
     for i in range(number_of_relays):
-        relays.append(ProconipRelaySwitch(coordinator, entry, i))
-        relays.append(ProconipRelayMode(coordinator, entry, i))
+        relays.append(ProconipRelaySwitch(coordinator, entry, relay_id=i))
+        relays.append(ProconipRelayMode(coordinator, entry, relay_id=i))
     async_add_devices(relays)
 
 
@@ -55,8 +55,8 @@ class ProconipRelaySwitch(ProconipEntity, SwitchEntity):
 class ProconipRelayMode(ProconipEntity, SwitchEntity):
     """proconip switch class."""
 
-    def __int__(self, coordinator, config_entry, relay_id):
-        super().__int__(coordinator, config_entry)
+    def __init__(self, coordinator, config_entry, relay_id):
+        super().__init__(coordinator, config_entry)
         self.relay_id = relay_id
 
     async def async_turn_on(self, **kwargs):  # pylint: disable=unused-argument

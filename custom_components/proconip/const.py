@@ -4,7 +4,7 @@ NAME = "ProCon.IP Pool Controller"
 MANUFACTURER = "Yannic Labonte"
 DOMAIN = "proconip"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.0.1-alpha.5"
+VERSION = "1.0.1-alpha.6"
 
 ATTRIBUTION = "Data provided by your ProCon.IP pool controller from Pool Digital."
 ISSUE_URL = "https://github.com/ylabonte/proconip/issues"
