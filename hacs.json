@@ -1,10 +1,9 @@
 {
   "name": "ProCon.IP Pool Controller",
-  "domains": ["binary_sensor", "sensor", "switch"],
-  "iot_class": "Local Polling",
   "filename": "proconip.zip",
   "hide_default_branch": true,
   "homeassistant": "2023.3.0",
+  "iot_class": "Local Polling",
   "render_readme": true,
   "zip_release": true
 }
