@@ -1,5 +1,4 @@
-"""
-Custom integration to integrate ProCon.IP Pool Controller with Home Assistant.
+"""Custom integration to integrate ProCon.IP Pool Controller with Home Assistant.
 
 For more details about this integration, please refer to
 https://github.com/ylabonte/proconip
@@ -68,8 +67,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
 class ProconipDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching data from the API."""
-
-
 
     def __init__(
         self,

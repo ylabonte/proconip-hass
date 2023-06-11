@@ -9,7 +9,10 @@ from .const import VERSION
 
 
 class ProconipEntity(CoordinatorEntity):
+    """Proconip entity."""
+
     def __init__(self, coordinator, config_entry):
+        """Initialize new entity."""
         super().__init__(coordinator)
         self.config_entry = config_entry
 
@@ -20,6 +23,7 @@ class ProconipEntity(CoordinatorEntity):
 
     @property
     def device_info(self):
+        """Get device info."""
         return {
             "identifiers": {(DOMAIN, self.unique_id)},
             "name": NAME,

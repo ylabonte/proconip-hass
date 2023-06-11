@@ -1,4 +1,5 @@
 """Sensor platform for ProCon.IP Pool Controller."""
+
 from .const import DEFAULT_NAME
 from .const import DOMAIN
 from .const import ELECTRODE_ICON
@@ -38,7 +39,7 @@ class ProconipRedoxSensor(ProconipEntity):
 
     @property
     def suggested_unit_of_measurement(self):
-        """Return measurement unit"""
+        """Return measurement unit."""
         return self.coordinator.data.redox_electrode.unit
 
 
@@ -67,5 +68,5 @@ class ProconipPhSensor(ProconipEntity):
 
     @property
     def suggested_unit_of_measurement(self):
-        """Return measurement unit"""
+        """Return measurement unit."""
         return self.coordinator.data.ph_electrode.unit

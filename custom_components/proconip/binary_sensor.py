@@ -1,15 +1,15 @@
 """Binary sensor platform for ProCon.IP Pool Controller."""
+
 from homeassistant.components.binary_sensor import BinarySensorEntity
 
-from .const import BINARY_SENSOR
-from .const import BINARY_SENSOR_DEVICE_CLASS
 from .const import DEFAULT_NAME
 from .const import DOMAIN
 from .entity import ProconipEntity
 
 
 async def async_setup_entry(hass, entry, async_add_devices):
-    """Setup binary_sensor platform."""
+    """Set up binary_sensor platform."""
+
     coordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_devices([
         ProconipChlorineDosageEnabledBinarySensor(coordinator, entry),

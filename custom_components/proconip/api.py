@@ -1,4 +1,5 @@
 """Sample API Client."""
+
 import logging
 
 import aiohttp
@@ -19,7 +20,8 @@ HEADERS = {"Content-type": "application/json; charset=UTF-8"}
 
 
 class ProconipApiClient:
-    """ProCon.IP API Wrapper"""
+    """ProCon.IP API Wrapper."""
+
     _api_config: ConfigObject
     _session: aiohttp.ClientSession
     _most_recent_data: GetStateData | None

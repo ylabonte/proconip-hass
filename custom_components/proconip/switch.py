@@ -1,4 +1,5 @@
 """Switch platform for ProCon.IP Pool Controller."""
+
 from homeassistant.components.switch import SwitchEntity
 
 from .const import DEFAULT_NAME
@@ -20,9 +21,10 @@ async def async_setup_entry(hass, entry, async_add_devices):
 
 
 class ProconipRelaySwitch(ProconipEntity, SwitchEntity):
-    """proconip switch class."""
+    """Proconip switch class."""
 
     def __init__(self, coordinator, config_entry, relay_id):
+        """Initialize new relay switch."""
         super().__init__(coordinator, config_entry)
         self.relay_id = relay_id
 
@@ -56,6 +58,7 @@ class ProconipRelayMode(ProconipEntity, SwitchEntity):
     """proconip switch class."""
 
     def __init__(self, coordinator, config_entry, relay_id):
+        """Initialize new relay mode."""
         super().__init__(coordinator, config_entry)
         self.relay_id = relay_id
 
