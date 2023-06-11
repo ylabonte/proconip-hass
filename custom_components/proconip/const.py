@@ -1,10 +1,10 @@
 """Constants for ProCon.IP Pool Controller."""
 # Base component constants
 NAME = "ProCon.IP Pool Controller"
-MANUFACTURER = "Pool Digital"
+MANUFACTURER = "Yannic Labonte"
 DOMAIN = "proconip"
 DOMAIN_DATA = f"{DOMAIN}_data"
-VERSION = "1.0.1-alpha.3"
+VERSION = "1.0.1-alpha.5"
 
 ATTRIBUTION = "Data provided by your ProCon.IP pool controller from Pool Digital."
 ISSUE_URL = "https://github.com/ylabonte/proconip/issues"
