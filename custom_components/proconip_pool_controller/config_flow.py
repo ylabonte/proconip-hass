@@ -66,10 +66,15 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
                     ),
                     vol.Required(
                         CONF_SCAN_INTERVAL,
-                        default=(user_input or {}).get(CONF_SCAN_INTERVAL),
+                        default=(user_input or {CONF_SCAN_INTERVAL: 3}).get(
+                            CONF_SCAN_INTERVAL
+                        ),
                     ): selector.NumberSelector(
                         selector.NumberSelectorConfig(
-                            mode=selector.NumberSelectorMode.BOX
+                            mode=selector.NumberSelectorMode.SLIDER,
+                            min=1,
+                            max=60,
+                            step=0.5,
                         ),
                     ),
                     vol.Required(

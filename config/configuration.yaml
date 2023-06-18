@@ -5,4 +5,4 @@ default_config:
 logger:
   default: info
   logs:
-    custom_components.proconip: debug
+    custom_components.proconip_pool_controller: debug

@@ -10,6 +10,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from proconip.definitions import GetStateData
 from proconip.api import (
     BadCredentialsException,
     BadStatusCodeException,
@@ -25,12 +26,13 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching data from the API."""
 
     config_entry: ConfigEntry
+    data: GetStateData
 
     def __init__(
         self,
         hass: HomeAssistant,
         client: ProconipApiClient,
-        update_interval_in_seconds: int,
+        update_interval_in_seconds: float,
     ) -> None:
         """Initialize."""
         self.client = client
@@ -41,7 +43,7 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=update_interval_in_seconds),
         )
 
-    async def _async_update_data(self):
+    async def _async_update_data(self) -> GetStateData:
         """Update data via library."""
         try:
             return await self.client.async_get_data()

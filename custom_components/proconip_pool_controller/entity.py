@@ -13,14 +13,21 @@ class ProconipPoolControllerEntity(CoordinatorEntity):
 
     _attr_attribution = ATTRIBUTION
 
+    coordinator: ProconipPoolControllerDataUpdateCoordinator
+
     def __init__(
         self, coordinator: ProconipPoolControllerDataUpdateCoordinator
     ) -> None:
         """Initialize."""
         super().__init__(coordinator)
-        self._attr_unique_id = coordinator.config_entry.entry_id
+        if self._attr_unique_id is None:
+            self._attr_unique_id = coordinator.config_entry.entry_id
+        else:
+            self._attr_unique_id = (
+                f"{coordinator.config_entry.entry_id}-{self._attr_unique_id}"
+            )
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self.unique_id)},
+            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
             name=NAME,
             model=VERSION,
             manufacturer=NAME,

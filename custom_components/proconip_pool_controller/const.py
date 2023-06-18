@@ -4,8 +4,8 @@ from logging import Logger, getLogger
 LOGGER: Logger = getLogger(__package__)
 
 NAME = "ProCon.IP Pool Controller"
-DOMAIN = "proconip"
-VERSION = "1.0.1-alpha.8"
+DOMAIN = "proconip_pool_controller"
+VERSION = "1.0.1-beta"
 ATTRIBUTION = (
     "Data provided by your Pool Digital ProCon.IP (https://www.pooldigital.de)"
 )
