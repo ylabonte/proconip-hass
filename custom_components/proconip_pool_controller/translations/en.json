@@ -16,8 +16,5 @@
             "connection": "Unable to connect to the server.",
             "unknown": "Unknown error occurred."
         }
-    },
-    "sensor": {
-        "sensor3": "Third sensor"
     }
 }
