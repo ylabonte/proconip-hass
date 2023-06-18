@@ -1,0 +1,15 @@
+{
+  "domain": "proconip_pool_controller",
+  "name": "ProCon.IP Pool Controller",
+  "codeowners": [
+    "@ylabonte"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/ylabonte/proconip-hass",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/ylabonte/proconip-hass/issues",
+  "requirements": [
+    "proconip==1.2.5"
+  ],
+  "version": "1.0.1-alpha.8"
+}
