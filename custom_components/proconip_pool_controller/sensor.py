@@ -78,6 +78,7 @@ class ProconipTemperatureSensor(ProconipPoolControllerEntity, SensorEntity):
         coordinator: ProconipPoolControllerDataUpdateCoordinator,
         sensor_no: int,
     ) -> None:
+        """Initialize new temperature sensor."""
         super().__init__(coordinator)
         self._sensor_no = sensor_no
         self._sensor = self.coordinator.data.temperature_objects[self._sensor_no - 1]
