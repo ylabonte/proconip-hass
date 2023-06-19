@@ -15,9 +15,26 @@ async def async_setup_entry(hass, entry, async_add_devices):
         ProconipRedoxSensor(coordinator),
         ProconipPhSensor(coordinator),
     ]
+    for i in range(5):
+        sensor_entities.append(
+            ProconipAnalogSensor(coordinator=coordinator, sensor_no=i + 1)
+        )
+    for i in range(4):
+        sensor_entities.append(
+            ProconipDigitalInputSensor(coordinator=coordinator, sensor_no=i + 1)
+        )
     for i in range(8):
         sensor_entities.append(
             ProconipTemperatureSensor(coordinator=coordinator, sensor_no=i + 1)
+        )
+    for i in range(3):
+        sensor_entities.append(
+            ProconipCanisterSensor(coordinator=coordinator, canister_no=i + 1)
+        )
+        sensor_entities.append(
+            ProconipCanisterConsumptionSensor(
+                coordinator=coordinator, canister_no=i + 1
+            )
         )
     async_add_devices(sensor_entities)
 
@@ -89,3 +106,122 @@ class ProconipTemperatureSensor(ProconipPoolControllerEntity, SensorEntity):
     def native_value(self) -> str:
         """Return the native value of the sensor."""
         return self._sensor.value
+
+
+class ProconipAnalogSensor(ProconipPoolControllerEntity, SensorEntity):
+    """ProCon.IP Analog Sensor class."""
+
+    _attr_icon = "mdi:sine-wave"
+    _attr_state_class = "measurement"
+    _attr_suggested_display_precision = 2
+
+    def __init__(
+        self,
+        coordinator: ProconipPoolControllerDataUpdateCoordinator,
+        sensor_no: int,
+    ) -> None:
+        """Initialize new temperature sensor."""
+        super().__init__(coordinator)
+        self._adc_no = sensor_no
+        self._adc = self.coordinator.data.analog_objects[self._adc_no - 1]
+        self._attr_name = f"Analog No. {sensor_no}: {self._adc.name}"
+        self._attr_unique_id = f"analog_{sensor_no}"
+
+    @property
+    def native_value(self) -> str:
+        """Return the native value of the sensor."""
+        return self._adc.value
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return the suggested unit of measurement."""
+        return self._adc.unit
+
+
+class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
+    """ProCon.IP Digital Input Sensor class."""
+
+    _attr_icon = "mdi:import"
+    _attr_state_class = "measurement"
+    _attr_suggested_display_precision = 0
+
+    def __init__(
+        self,
+        coordinator: ProconipPoolControllerDataUpdateCoordinator,
+        sensor_no: int,
+    ) -> None:
+        """Initialize new temperature sensor."""
+        super().__init__(coordinator)
+        self._digital_input_no = sensor_no
+        self._digital_input = self.coordinator.data.digital_input_objects[
+            self._digital_input_no - 1
+        ]
+        self._attr_name = f"Digital Input No. {sensor_no}: {self._digital_input.name}"
+        self._attr_unique_id = f"digital_input_{sensor_no}"
+
+    @property
+    def native_value(self) -> str:
+        """Return the native value of the sensor."""
+        return self._digital_input.value
+
+
+class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
+    """ProCon.IP Canister Sensor class."""
+
+    _attr_icon = "mdi:bottle-tonic-outline"
+    _attr_state_class = "measurement"
+    _attr_suggested_display_precision = 1
+
+    def __init__(
+        self,
+        coordinator: ProconipPoolControllerDataUpdateCoordinator,
+        canister_no: int,
+    ) -> None:
+        """Initialize new temperature sensor."""
+        super().__init__(coordinator)
+        self._canister_no = canister_no
+        self._canister = self.coordinator.data.canister_objects[self._canister_no - 1]
+        self._attr_name = f"Canister {self._canister.name}"
+        self._attr_unique_id = f"canister_{canister_no}"
+
+    @property
+    def native_value(self) -> str:
+        """Return the native value of the sensor."""
+        return self._canister.value
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return the suggested unit of measurement."""
+        return self._canister.unit
+
+
+class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEntity):
+    """ProCon.IP Canister Consumption Sensor class."""
+
+    _attr_icon = "mdi:bottle-tonic-plus-outline"
+    _attr_state_class = "measurement"
+    _attr_suggested_display_precision = 2
+
+    def __init__(
+        self,
+        coordinator: ProconipPoolControllerDataUpdateCoordinator,
+        canister_no: int,
+    ) -> None:
+        """Initialize new temperature sensor."""
+        super().__init__(coordinator)
+        self._canister_no = canister_no
+        self._canister = self.coordinator.data.consumption_objects[
+            self._canister_no - 1
+        ]
+        self._attr_name = f"Canister consumption {self._canister.name}"
+        self._attr_unique_id = f"canister_consumption_{canister_no}"
+
+    @property
+    def native_value(self) -> str:
+        """Return the native value of the sensor."""
+        return self._canister.value
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return the suggested unit of measurement."""
+        return self._canister.unit
