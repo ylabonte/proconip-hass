@@ -46,7 +46,7 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
         self._attr_entity_registry_visible_default = (
             not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
         )
-        self._attr_name = f"Relay No. {relay_no}: {self._relay.name}"
+        self._attr_name = f"Relay No. {relay_no} ({self._relay.name})"
         self._attr_unique_id = f"relay_{relay_no}"
 
     async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
@@ -80,7 +80,7 @@ class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity
         self._attr_entity_registry_visible_default = (
             not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
         )
-        self._attr_name = f"Relay No. {relay_no}: {self._relay.name} Auto-Mode"
+        self._attr_name = f"Relay No. {relay_no} ({self._relay.name}) Auto-Mode"
         self._attr_unique_id = f"relay_{relay_no}_auto"
 
     async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument

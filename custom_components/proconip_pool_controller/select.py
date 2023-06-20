@@ -57,6 +57,7 @@ class ProconipPoolControllerRelaySelect(ProconipPoolControllerEntity, SelectEnti
 
     @property
     def current_option(self) -> str | None:
+        """Return currently selected option."""
         if self._relay.is_auto_mode():
             return "auto"
         if self._relay.is_on():

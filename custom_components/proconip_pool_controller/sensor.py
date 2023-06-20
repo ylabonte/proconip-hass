@@ -269,7 +269,6 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Relay State Sensor class."""
 
     _attr_icon = "mdi:light-switch"
-    _attr_state_class = "measurement"
 
     def __init__(
         self,
@@ -279,7 +278,7 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
         """Initialize new temperature sensor."""
         super().__init__(coordinator)
         self._relay_id = relay_no - 1
-        self._relay = self.coordinator.data.aggregated_relay_objects[self._relay_id]
+        self._relay = self.coordinator.data.get_relay(self._relay_id)
         self._attr_entity_registry_visible_default = (
             not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
         )
