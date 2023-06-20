@@ -21,8 +21,9 @@ from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
     Platform.BINARY_SENSOR,
+    Platform.SELECT,
+    Platform.SENSOR,
     Platform.SWITCH,
 ]
 

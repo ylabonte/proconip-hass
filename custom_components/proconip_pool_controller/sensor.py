@@ -36,6 +36,10 @@ async def async_setup_entry(hass, entry, async_add_devices):
                 coordinator=coordinator, canister_no=i + 1
             )
         )
+    for i in range(8):
+        sensor_entities.append(
+            ProconipRelayStateSensor(coordinator=coordinator, relay_no=i + 1)
+        )
     async_add_devices(sensor_entities)
 
 
@@ -99,6 +103,7 @@ class ProconipTemperatureSensor(ProconipPoolControllerEntity, SensorEntity):
         super().__init__(coordinator)
         self._sensor_no = sensor_no
         self._sensor = self.coordinator.data.temperature_objects[self._sensor_no - 1]
+        self._attr_entity_registry_visible_default = self._sensor.name != "n.a."
         self._attr_name = f"Temperature No. {sensor_no}: {self._sensor.name}"
         self._attr_unique_id = f"temperature_{sensor_no}"
 
@@ -124,6 +129,7 @@ class ProconipAnalogSensor(ProconipPoolControllerEntity, SensorEntity):
         super().__init__(coordinator)
         self._adc_no = sensor_no
         self._adc = self.coordinator.data.analog_objects[self._adc_no - 1]
+        self._attr_entity_registry_visible_default = self._adc.name != "n.a."
         self._attr_name = f"Analog No. {sensor_no}: {self._adc.name}"
         self._attr_unique_id = f"analog_{sensor_no}"
 
@@ -156,6 +162,7 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
         self._digital_input = self.coordinator.data.digital_input_objects[
             self._digital_input_no - 1
         ]
+        self._attr_entity_registry_visible_default = self._digital_input.name != "n.a."
         self._attr_name = f"Digital Input No. {sensor_no}: {self._digital_input.name}"
         self._attr_unique_id = f"digital_input_{sensor_no}"
 
@@ -163,6 +170,11 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
     def native_value(self) -> str:
         """Return the native value of the sensor."""
         return self._digital_input.value
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return the suggested unit of measurement."""
+        return self._digital_input.unit
 
 
 class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
@@ -181,6 +193,19 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
         super().__init__(coordinator)
         self._canister_no = canister_no
         self._canister = self.coordinator.data.canister_objects[self._canister_no - 1]
+        match (canister_no):
+            case 1:
+                self._attr_entity_registry_visible_default = (
+                    self.coordinator.data.is_chlorine_dosage_enabled()
+                )
+            case 2:
+                self._attr_entity_registry_visible_default = (
+                    self.coordinator.data.is_ph_minus_dosage_enabled()
+                )
+            case 3:
+                self._attr_entity_registry_visible_default = (
+                    self.coordinator.data.is_ph_plus_dosage_enabled()
+                )
         self._attr_name = f"Canister {self._canister.name}"
         self._attr_unique_id = f"canister_{canister_no}"
 
@@ -213,6 +238,19 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
         self._canister = self.coordinator.data.consumption_objects[
             self._canister_no - 1
         ]
+        match (canister_no):
+            case 1:
+                self._attr_entity_registry_visible_default = (
+                    self.coordinator.data.is_chlorine_dosage_enabled()
+                )
+            case 2:
+                self._attr_entity_registry_visible_default = (
+                    self.coordinator.data.is_ph_minus_dosage_enabled()
+                )
+            case 3:
+                self._attr_entity_registry_visible_default = (
+                    self.coordinator.data.is_ph_plus_dosage_enabled()
+                )
         self._attr_name = f"Canister consumption {self._canister.name}"
         self._attr_unique_id = f"canister_consumption_{canister_no}"
 
@@ -225,3 +263,30 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
     def native_unit_of_measurement(self) -> str:
         """Return the suggested unit of measurement."""
         return self._canister.unit
+
+
+class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
+    """ProCon.IP Relay State Sensor class."""
+
+    _attr_icon = "mdi:light-switch"
+    _attr_state_class = "measurement"
+
+    def __init__(
+        self,
+        coordinator: ProconipPoolControllerDataUpdateCoordinator,
+        relay_no: int,
+    ) -> None:
+        """Initialize new temperature sensor."""
+        super().__init__(coordinator)
+        self._relay_id = relay_no - 1
+        self._relay = self.coordinator.data.aggregated_relay_objects[self._relay_id]
+        self._attr_entity_registry_visible_default = (
+            not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+        )
+        self._attr_name = f"Relay No. {relay_no} ({self._relay.name}) State"
+        self._attr_unique_id = f"relay_state_{relay_no}"
+
+    @property
+    def native_value(self) -> str:
+        """Return the native value of the sensor."""
+        return self._relay.display_value

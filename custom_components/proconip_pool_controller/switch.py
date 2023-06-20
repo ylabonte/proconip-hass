@@ -9,7 +9,7 @@ from .entity import ProconipPoolControllerEntity
 
 
 async def async_setup_entry(hass, entry, async_add_devices):
-    """Set up the sensor platform."""
+    """Set up the switch platform."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
     number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
     relays = []
@@ -43,8 +43,11 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
         self._attr_available = available
         self._relay_id = relay_no - 1
         self._relay = coordinator.data.get_relay(self._relay_id)
-        self._attr_unique_id = f"relay_{relay_no}"
+        self._attr_entity_registry_visible_default = (
+            not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+        )
         self._attr_name = f"Relay No. {relay_no}: {self._relay.name}"
+        self._attr_unique_id = f"relay_{relay_no}"
 
     async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Turn on the switch."""
@@ -74,8 +77,11 @@ class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity
         super().__init__(coordinator)
         self._relay_id = relay_no - 1
         self._relay = coordinator.data.get_relay(self._relay_id)
-        self._attr_unique_id = f"relay_{relay_no}_auto"
+        self._attr_entity_registry_visible_default = (
+            not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+        )
         self._attr_name = f"Relay No. {relay_no}: {self._relay.name} Auto-Mode"
+        self._attr_unique_id = f"relay_{relay_no}_auto"
 
     async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Set relay to auto mode."""
