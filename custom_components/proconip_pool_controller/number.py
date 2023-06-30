@@ -58,6 +58,7 @@ class ProconipPoolControllerDosageRelayTimer(
 
     @property
     def icon(self) -> str | None:
+        """Return icon depending on current state"""
         return (
             "mdi:toggle-switch-variant"
             if self.coordinator.data.get_relay(self._relay_id).is_on()
