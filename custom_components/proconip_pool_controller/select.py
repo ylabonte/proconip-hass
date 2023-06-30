@@ -27,8 +27,6 @@ async def async_setup_entry(hass, entry, async_add_devices):
 class ProconipPoolControllerRelaySelect(ProconipPoolControllerEntity, SelectEntity):
     """ProCon.IP Pool Controller relay select class."""
 
-    _attr_icon = "mdi:light-switch"
-
     def __init__(
         self,
         coordinator: ProconipPoolControllerDataUpdateCoordinator,
@@ -56,11 +54,20 @@ class ProconipPoolControllerRelaySelect(ProconipPoolControllerEntity, SelectEnti
         self._attr_unique_id = f"relay_select_{relay_no}"
 
     @property
+    def icon(self) -> str | None:
+        return (
+            "mdi:toggle-switch-variant"
+            if self.coordinator.data.get_relay(self._relay_id).is_on()
+            else "mdi:toggle-switch-variant-off"
+        )
+
+    @property
     def current_option(self) -> str | None:
         """Return currently selected option."""
-        if self._relay.is_auto_mode():
+        relay = self.coordinator.data.get_relay(self._relay_id)
+        if relay.is_auto_mode():
             return "auto"
-        if self._relay.is_on():
+        if relay.is_on():
             return "on"
         return "off"
 

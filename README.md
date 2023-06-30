@@ -18,7 +18,7 @@
 | `binary_sensor` | Show flags/binary data from `GetState.csv` API.     |
 | `sensor`        | Show various data from `GetState.csv` API.          |
 | `switch`        | `On`/`Off` and `Auto`/`Manual` switches for relays. |
-| `select`        | `Auto`/`On`/`Off` selects.                          |
+| `select`        | `Auto`/`On`/`Off` dropdowns for relays.             |
 | `number`        | Dosage relay timer/countdown in seconds.            |
 
 ![picture]

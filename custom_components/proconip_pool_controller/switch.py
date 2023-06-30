@@ -1,7 +1,7 @@
 """Switch platform for proconip."""
 from __future__ import annotations
 
-from homeassistant.components.switch import SwitchEntity
+from homeassistant.components.switch import SwitchEntity, SwitchDeviceClass
 
 from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
@@ -30,7 +30,7 @@ async def async_setup_entry(hass, entry, async_add_devices):
 class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEntity):
     """ProCon.IP Pool Controller relay switch class."""
 
-    _attr_icon = "mdi:light-switch"
+    _attr_device_class = SwitchDeviceClass.SWITCH
 
     def __init__(
         self,
@@ -62,11 +62,13 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
     @property
     def is_on(self) -> bool:
         """Return true if the switch is on."""
-        return self._relay.is_on()
+        return self.coordinator.data.get_relay(self._relay_id).is_on()
 
 
 class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity):
     """Proconip auto-mode switch class."""
+
+    _attr_device_class = SwitchDeviceClass.SWITCH
 
     def __init__(
         self,
@@ -85,7 +87,7 @@ class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity
 
     async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
         """Set relay to auto mode."""
-        await self.coordinator.client.async_set_auto_mode(self._relay_id)
+        await self.coordinator.client.async_switch_to_auto(self._relay_id)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
@@ -99,4 +101,4 @@ class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity
     @property
     def is_on(self) -> bool:
         """Return true if the switch is on."""
-        return self._relay.is_auto_mode()
+        return self.coordinator.data.get_relay(self._relay_id).is_auto_mode()

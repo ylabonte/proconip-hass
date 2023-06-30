@@ -110,7 +110,7 @@ class ProconipTemperatureSensor(ProconipPoolControllerEntity, SensorEntity):
     @property
     def native_value(self) -> str:
         """Return the native value of the sensor."""
-        return self._sensor.value
+        return self.coordinator.data.temperature_objects[self._sensor_no - 1].value
 
 
 class ProconipAnalogSensor(ProconipPoolControllerEntity, SensorEntity):
@@ -136,7 +136,7 @@ class ProconipAnalogSensor(ProconipPoolControllerEntity, SensorEntity):
     @property
     def native_value(self) -> str:
         """Return the native value of the sensor."""
-        return self._adc.value
+        return self.coordinator.data.analog_objects[self._adc_no - 1].value
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -169,7 +169,9 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
     @property
     def native_value(self) -> str:
         """Return the native value of the sensor."""
-        return self._digital_input.value
+        return self.coordinator.data.digital_input_objects[
+            self._digital_input_no - 1
+        ].value
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -212,7 +214,7 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
     @property
     def native_value(self) -> str:
         """Return the native value of the sensor."""
-        return self._canister.value
+        return self.coordinator.data.canister_objects[self._canister_no - 1].value
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -257,7 +259,7 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
     @property
     def native_value(self) -> str:
         """Return the native value of the sensor."""
-        return self._canister.value
+        return self.coordinator.data.consumption_objects[self._canister_no - 1].value
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -288,4 +290,4 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
     @property
     def native_value(self) -> str:
         """Return the native value of the sensor."""
-        return self._relay.display_value
+        return self.coordinator.data.get_relay(self._relay_id).display_value
