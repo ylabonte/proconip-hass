@@ -149,7 +149,7 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
 
     _attr_icon = "mdi:import"
     _attr_state_class = "measurement"
-    _attr_suggested_display_precision = 0
+    _attr_suggested_display_precision = 2
 
     def __init__(
         self,
