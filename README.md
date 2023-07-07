@@ -11,6 +11,8 @@
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
+![ProCon.IP Home Assistant Integration](./logo.png)
+
 **This component will set up the following platforms.**
 
 | Platform        | Description                                         |
