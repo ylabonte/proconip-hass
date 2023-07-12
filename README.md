@@ -11,7 +11,7 @@
 [![Discord][discord-shield]][discord]
 [![Community Forum][forum-shield]][forum]
 
-![ProCon.IP Home Assistant Integration](./logo.png)
+![ProCon.IP Home Assistant Integration][logo]
 
 **This component will set up the following platforms.**
 
@@ -78,7 +78,8 @@ This project was generated using the [integration blueprint][integration_bluepri
 [hacs-badge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
 [discord]: https://discord.gg/Qa5fW2R
 [discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
-[picture]: picture.png
+[logo]: https://github.com/ylabonte/proconip-hass/raw/main/logo.png
+[picture]: https://github.com/ylabonte/proconip-hass/raw/main/picture.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/
 [license-shield]: https://img.shields.io/github/license/ylabonte/proconip-hass.svg?style=for-the-badge
