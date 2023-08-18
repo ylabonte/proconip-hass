@@ -1,7 +1,8 @@
 """ProCon.IP API Client."""
 from __future__ import annotations
 
-import aiohttp
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from proconip.definitions import (
     ConfigObject,
@@ -23,13 +24,14 @@ class ProconipApiClient:
         base_url: str,
         username: str,
         password: str,
-        session: aiohttp.ClientSession,
+        hass: HomeAssistant,
     ) -> None:
         """ProCon.IP API Client."""
+        self.hass = hass
         self._base_url = base_url
         self._username = username
         self._password = password
-        self._session = session
+        self._session = async_get_clientsession(hass)
         self._api_config = ConfigObject(
             base_url=self._base_url,
             username=self._username,

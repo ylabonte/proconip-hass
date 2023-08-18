@@ -10,7 +10,7 @@ from .entity import ProconipPoolControllerEntity
 
 async def async_setup_entry(hass, entry, async_add_devices):
     """Set up the switch platform."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
     relays = []
     for i in range(number_of_relays):
@@ -18,7 +18,7 @@ async def async_setup_entry(hass, entry, async_add_devices):
             ProconipPoolControllerRelaySwitch(
                 coordinator=coordinator,
                 relay_no=i + 1,
-                available=not coordinator.data.is_dosage_relay(relay_id=i),
+                available=not coordinator.is_active_dosage_relay(relay_id=i),
             )
         )
         relays.append(

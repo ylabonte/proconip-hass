@@ -1,0 +1,20 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "description": "Für weitere Hilfe zur Integration siehe hier: https://github.com/ylabonte/proconip-hass",
+                "data": {
+                    "url": "Adresse der Poolsteuerung (URL)",
+                    "scan_interval": "Aktualisierungsintervall in Sekunden",
+                    "username": "Benutzername",
+                    "password": "Passwort"
+                }
+            }
+        },
+        "error": {
+            "auth": "Benutzername/Passwort ungültig.",
+            "connection": "Verbindung mit dem Server kann nicht hergestellt werden.",
+            "unknown": "Ein unbekannter Fehler ist aufgetreten."
+        }
+    }
+}

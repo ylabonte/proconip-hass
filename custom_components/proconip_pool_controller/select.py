@@ -44,7 +44,7 @@ class ProconipPoolControllerRelaySelect(ProconipPoolControllerEntity, SelectEnti
         self._attr_name = f"Relay No. {relay_no}: {self._relay.name}"
         self._attr_options = (
             ["auto", "off"]
-            if self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+            if self.coordinator.is_active_dosage_relay(relay_id=self._relay_id)
             else [
                 "auto",
                 "on",

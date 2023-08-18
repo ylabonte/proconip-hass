@@ -1,8 +1,9 @@
 """Switch platform for proconip."""
 from __future__ import annotations
 
-from homeassistant.components.number import NumberEntity
 import asyncio
+
+from homeassistant.components.number import NumberEntity
 
 from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
@@ -11,11 +12,11 @@ from .entity import ProconipPoolControllerEntity
 
 async def async_setup_entry(hass, entry, async_add_devices):
     """Set up the select platform."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
     relays = []
     for i in range(number_of_relays):
-        if coordinator.data.is_dosage_relay(relay_id=i):
+        if coordinator.is_active_dosage_relay(relay_id=i):
             relays.append(
                 ProconipPoolControllerDosageRelayTimer(
                     coordinator=coordinator,
