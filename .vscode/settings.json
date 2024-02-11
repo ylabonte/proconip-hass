@@ -1,6 +1,13 @@
 {
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter"
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.tabSize": 4,
+        "files.eol": "\n",
+        "files.trimTrailingWhitespace": true,
+        "pylint.enabled": true
     },
-    "python.formatting.provider": "none"
+    "python.analysis.autoImportCompletions": true
 }
