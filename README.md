@@ -48,6 +48,15 @@
 
 <!---->
 
+## Changelog
+
+### Version 1.2.0 (2024-02-12)
+WARNING: This update will create new entities. I could not find a way to remove the old entities programatically, so I apologize, but you will have to remove the obsolete entities manually (you can easily filter for them and remove all at once).
+
+* Require Home Assistant Core 2024.2.1 or newer.
+* Fix configuration/setup bug (issue #28).
+* Fix multi instance support.
+
 ## Support for this integration
 
 If you have trouble with this integration and want to get support, you can open an [issue on github][issues], so others

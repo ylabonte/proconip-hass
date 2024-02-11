@@ -1,4 +1,5 @@
 """DataUpdateCoordinator for ProCon.IP Pool Controller."""
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -51,7 +52,7 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
 
     async def proconip_update_method(self) -> GetStateData:
         """Update data via library."""
-        data: GetStateData = None
+        data: GetStateData | None = None
         try:
             data = await self.client.async_get_data()
         except BadCredentialsException as exception:

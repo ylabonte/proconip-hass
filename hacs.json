@@ -2,7 +2,7 @@
     "name": "ProCon.IP Pool Controller",
     "filename": "proconip_pool_controller.zip",
     "hide_default_branch": true,
-    "homeassistant": "2023.6.0",
+    "homeassistant": "2024.2.1",
     "render_readme": true,
     "zip_release": true
 }
