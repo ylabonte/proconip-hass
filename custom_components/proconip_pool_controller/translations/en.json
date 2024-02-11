@@ -4,6 +4,7 @@
             "user": {
                 "description": "If you need help with the configuration have a look here: https://github.com/ylabonte/proconip-hass",
                 "data": {
+                    "name": "Instance name (eg. 'Jacuzzi')",
                     "url": "Controller Address (URL)",
                     "scan_interval": "Scan/update interval in seconds",
                     "username": "Username",

@@ -1,4 +1,5 @@
 """ProCon.IP API Client."""
+
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
@@ -31,15 +32,21 @@ class ProconipApiClient:
         self._base_url = base_url
         self._username = username
         self._password = password
-        self._session = async_get_clientsession(hass)
+        self._session = async_get_clientsession(hass=hass)
         self._api_config = ConfigObject(
             base_url=self._base_url,
             username=self._username,
             password=self._password,
         )
-        self._get_state_api = GetState(self._session, self._api_config)
-        self._relay_switch_api = RelaySwitch(self._session, self._api_config)
-        self._dosage_control_api = DosageControl(self._session, self._api_config)
+        self._get_state_api = GetState(
+            client_session=self._session, config=self._api_config
+        )
+        self._relay_switch_api = RelaySwitch(
+            client_session=self._session, config=self._api_config
+        )
+        self._dosage_control_api = DosageControl(
+            client_session=self._session, config=self._api_config
+        )
         self._most_recent_data = None
 
     async def async_get_data(
@@ -120,3 +127,23 @@ class ProconipApiClient:
         return await self._dosage_control_api.async_ph_plus_dosage(
             dosage_duration=duration_in_seconds,
         )
+
+
+class ProconipConnectionTester:
+    """Helper class for connection testing."""
+
+    def __init__(self, hass: HomeAssistant) -> None:
+        """Initialize connection tester."""
+        self.hass = hass
+
+    async def async_test_credentials(
+        self, url: str, username: str, password: str
+    ) -> None:
+        """Validate base url and credentials."""
+        client = ProconipApiClient(
+            base_url=url,
+            username=username,
+            password=password,
+            hass=self.hass,
+        )
+        await client.async_get_data()

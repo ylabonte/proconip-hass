@@ -4,6 +4,7 @@
             "user": {
                 "description": "Für weitere Hilfe zur Integration siehe hier: https://github.com/ylabonte/proconip-hass",
                 "data": {
+                    "name": "Name der Instanz (z.B. \"Whirlpool\")",
                     "url": "Adresse der Poolsteuerung (URL)",
                     "scan_interval": "Aktualisierungsintervall in Sekunden",
                     "username": "Benutzername",
