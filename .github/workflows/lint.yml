@@ -9,8 +9,8 @@ on:
       - "main"
 
 jobs:
-  ruff:
-    name: "Ruff"
+  lint:
+    name: "Lint using Black"
     runs-on: "ubuntu-latest"
     steps:
         - name: "Checkout the repository"
@@ -19,11 +19,14 @@ jobs:
         - name: "Set up Python"
           uses: actions/setup-python@v5.0.0
           with:
-            python-version: "3.11"
+            python-version: "3.12"
             cache: "pip"
 
         - name: "Install requirements"
           run: python3 -m pip install -r requirements.txt
 
-        - name: "Run"
-          run: python3 -m ruff check .
+        - name: "Run Black"
+          uses: psf/black@stable
+          with:
+            options: "--check --verbose"
+            src: "./custom_components/proconip_pool_controller"

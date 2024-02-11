@@ -16,10 +16,10 @@
             "extensions": [
                 "ms-python.python",
                 "ms-python.black-formatter",
-                "github.vscode-pull-request-github",
-                "ryanluker.vscode-coverage-gutters",
                 "ms-python.vscode-pylance",
-                "github.vscode-github-actions"
+                "ryanluker.vscode-coverage-gutters",
+                "github.vscode-github-actions",
+                "github.vscode-pull-request-github"
             ],
             "settings": {
                 "editor.defaultFormatter": "ms-python.black-formatter",
@@ -27,25 +27,24 @@
                 "editor.tabSize": 4,
                 "files.eol": "\n",
                 "files.trimTrailingWhitespace": true,
-                "pylint.enabled": true,
-                "python.analysis.typeCheckingMode": "strict",
+                "python.pythonPath": "/usr/local/bin/python3.12",
+                "python.autoComplete.extraPaths": [
+                    "/home/vscode/.local/lib/python3.12/site-packages",
+                    "/usr/local/lib/python3.12/site-packages",
+                    "/usr/local/lib/python3.12",
+                    "/usr/local/lib/python3.12/lib-dynload"
+                ],
+                "python.analysis.typeCheckingMode": "basic",
                 "python.analysis.diagnosticMode": "workspace",
                 "python.analysis.include": ["custom_components/**/*.py"],
                 "python.analysis.autoSearchPaths": true,
-                "python.analysis.extraPaths": [
-                    "/home/vscode/.local/lib/python3.12/site-packages",
-                    "/usr/local/lib/python3.12",
-                    "/usr/local/lib/python3.12/lib-dynload",
-                    "/usr/local/lib/python3.12/site-packages"
-                ],
                 "python.analysis.indexing": true,
                 "python.analysis.autoImportCompletions": true,
                 "python.analysis.importFormat": "relative",
                 "python.analysis.inlayHints.variableTypes": true,
                 "python.analysis.inlayHints.functionReturnTypes": true,
                 "python.analysis.inlayHints.callArgumentNames": "all",
-                "python.analysis.inlayHints.pytestParameters": true,
-                "python.pythonPath": "/usr/local/bin/python3.12"
+                "python.analysis.inlayHints.pytestParameters": true
             }
         }
     },
