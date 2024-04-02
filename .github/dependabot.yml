@@ -5,6 +5,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    assignees:
+      - ylabonte
 
   - package-ecosystem: "pip"
     directory: "/"
@@ -13,3 +15,5 @@ updates:
     ignore:
       # Dependabot should not update Home Assistant as that should match the homeassistant key in hacs.json
       - dependency-name: "homeassistant"
+    assignees:
+      - ylabonte
