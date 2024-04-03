@@ -50,7 +50,8 @@ async def async_setup_entry(
                 coordinator=coordinator, canister_no=i + 1, instance_id=entry.entry_id
             )
         )
-    for i in range(8):
+    number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
+    for i in range(number_of_relays):
         sensor_entities.append(
             ProconipRelayStateSensor(
                 coordinator=coordinator, relay_no=i + 1, instance_id=entry.entry_id
