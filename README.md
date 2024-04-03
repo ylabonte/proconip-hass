@@ -158,8 +158,8 @@ This project was generated using the [integration blueprint][integration_bluepri
 [releases]: https://github.com/ylabonte/proconip-hass/releases
 [user_profile]: https://github.com/ylabonte
 [issues]: https://github.com/ylabonte/proconip-hass/issues
-[screenshot1]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/screenshots/ha-integration-overview.png
-[screenshot2]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/screenshots/device-controls.png
-[screenshot3]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/screenshots/device-sensors.png
-[screenshot4]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/screenshots/device-sensors2.png
-[screenshot-solution1]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/screenshots/proconip-dosage-trap.png
+[screenshot1]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/ha-integration-overview.png
+[screenshot2]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/device-controls.png
+[screenshot3]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/device-sensors.png
+[screenshot4]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/device-sensors2.png
+[screenshot-solution1]: https://raw.githubusercontent.com/ylabonte/proconip-hass/main/screenshots/proconip-dosage-trap.png
