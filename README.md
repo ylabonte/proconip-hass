@@ -15,13 +15,14 @@
 
 **This component will set up the following platforms.**
 
-| Platform        | Description                                         |
-|-----------------|-----------------------------------------------------|
-| `binary_sensor` | Show flags/binary data from `GetState.csv` API.     |
-| `sensor`        | Show various data from `GetState.csv` API.          |
-| `switch`        | `On`/`Off` and `Auto`/`Manual` switches for relays. |
-| `select`        | `Auto`/`On`/`Off` dropdowns for relays.             |
-| `number`        | Dosage relay timer/countdown in seconds.            |
+| Platform        | Description                                              |
+|-----------------|----------------------------------------------------------|
+| `binary_sensor` | Show flags/binary data from `GetState.csv` API.          |
+| `light`         | DMX-channel lights (dimmer / RGB / RGBW) configured via the integration's options. |
+| `number`        | Dosage relay timer/countdown in seconds.                 |
+| `select`        | `Auto`/`On`/`Off` dropdowns for relays.                  |
+| `sensor`        | Show various data from `GetState.csv` API.               |
+| `switch`        | `On`/`Off` and `Auto`/`Manual` switches for relays.      |
 
 ## Table of contents
 * [Screenshots](#screenshots)
