@@ -47,6 +47,11 @@
 | [![Integration device controls][screenshot2]][screenshot2] | [![Integration device sensors][screenshot3]][screenshot3] | [![More integration device sensors][screenshot4]][screenshot4] |
 
 ## Install with HACS (recommended)
+
+> ⚠️ This integration is in the process of being submitted to the HACS
+> default list. Until that submission is merged, follow the manual steps below
+> to add the repository as a custom HACS repository.
+
 If you have not already done so, you should first install [HACS (Home Assistant Community Store)](https://hacs.xyz/).
 It is the usual way to install custom integrations and keep them up to date.
 
@@ -121,18 +126,7 @@ haven't found an english documentation/information so far):
 
 ## Changelog
 
-### Version 1.2.0 (2024-02-12)
-WARNING: This update will create new entities. I could not find a way to remove the old entities programatically, so I
-apologize, but you will have to remove the obsolete entities manually (you can easily filter for them and remove all at
-once).
-
-* Require Home Assistant Core 2024.2.1 or newer.
-* Fix configuration/setup bug (issue #28).
-* Fix multi instance support.
-
-### Earlier Versions
-All earlier versions have known bugs. Please update!
-For more information about
+See [CHANGELOG.md](CHANGELOG.md) for all release notes.
 
 ## Credits
 This project was generated using the [integration blueprint][integration_blueprint] from [@Ludeeus](https://github.com/ludeeus).

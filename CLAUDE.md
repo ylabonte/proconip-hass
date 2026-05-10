@@ -19,10 +19,9 @@ All scripts cd into the repo root themselves; run them from anywhere.
 
 | Command | What it does |
 |---|---|
-| `scripts/setup` | `pip install -r requirements.txt` (HA core, ruff, colorlog, proconip lib) |
+| `scripts/setup` | `pip install -r requirements.txt` (HA core, ruff, mypy, pre-commit, colorlog, proconip lib) |
 | `scripts/develop` | Boots a local Home Assistant on port 8123 with `custom_components/` on `PYTHONPATH` and `config/configuration.yaml`. Use this to manually verify changes. |
-| `scripts/lint` | `black --check --verbose custom_components/`. CI runs the same via `psf/black@stable`. |
-| `black custom_components/` | Auto-format (the dev container's format-on-save does this too). |
+| `scripts/lint` | Ruff lint and format, mypy type-check. Run pre-commit hooks on all files. |
 
 There is **no test suite** and no `pytest` configured. Verification is: `scripts/lint` + boot via `scripts/develop` + manually exercise the integration in the HA UI.
 
@@ -64,7 +63,7 @@ Key facts that aren't obvious from a single file:
 
 ## Coding conventions
 
-- **Format with Black.** That is the *only* enforced style. `requirements.txt` lists `ruff` but nothing in this repo runs it — don't introduce ruff-specific rules without wiring them up.
+- **Format and lint with ruff. Type-check with mypy --strict.** Run via `scripts/lint`.
 - **Use keyword arguments everywhere** when calling HA / library functions. The existing code is consistent about this (`coordinator=coordinator`, `relay_id=...`, `entry=entry`) — match it.
 - **Use `from __future__ import annotations`** at the top of new modules (every existing module does).
 - **Logging** goes through `LOGGER` from `const.py` (already a `logging.Logger` named after the package). Don't create new loggers.
@@ -79,6 +78,14 @@ Releases are cut by **publishing a GitHub release**:
 3. It zips the integration directory and attaches `proconip_pool_controller.zip` to the release for HACS.
 
 So: don't hand-edit `manifest.json` `version` for a release — just create the GitHub release with the right tag. **Do** keep `const.py` `VERSION` and `manifest.json` `version` in sync for development (the README changelog references this) and bump `hacs.json` `homeassistant` minimum if you start using newer HA APIs. Current minimum: **HA 2024.2.1**, Python **3.12** (see devcontainer image `python:dev-3.12`).
+
+### Post-release follow-up: HACS default-list submission
+
+After publishing the v2.0.0 GitHub release and watching CI go green,
+open a PR against [hacs/default](https://github.com/hacs/default) adding
+`ylabonte/proconip-hass` alphabetically to the `integration` file. The
+brand assets at `home-assistant/brands/custom_integrations/proconip_pool_controller/`
+are already in place. PR must be opened from a personal account, not an org.
 
 ## Commit / PR guidance
 
