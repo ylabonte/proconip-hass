@@ -27,16 +27,18 @@ fi
 
 echo "==> Using $PYTHON ($("$PYTHON" --version))"
 
-# If .venv exists but its python is broken (e.g., a host venv mounted into a
-# container where the symlinked Python doesn't exist), recreate it.
-if [ -d .venv ] && ! .venv/bin/python --version >/dev/null 2>&1; then
-    echo "==> Existing .venv has a non-working Python interpreter; recreating"
-    rm -rf .venv
-fi
-
-if [ ! -x .venv/bin/python ]; then
-    echo "==> Creating .venv"
-    "$PYTHON" -m venv .venv
+# Create or repair the venv.
+# We use `python -m venv .venv --clear` rather than `rm -rf .venv` so this
+# also works when .venv is a mounted volume (as in our devcontainer), which
+# can't be removed with rm because the mount point itself is busy. `--clear`
+# wipes only the contents and recreates the venv structure inside.
+if [ ! -x .venv/bin/python ] || ! .venv/bin/python --version >/dev/null 2>&1; then
+    if [ -d .venv ] && [ -n "$(ls -A .venv 2>/dev/null)" ]; then
+        echo "==> Existing .venv is empty or broken; clearing and recreating"
+    else
+        echo "==> Creating .venv"
+    fi
+    "$PYTHON" -m venv .venv --clear
 fi
 
 .venv/bin/python -m pip install --upgrade pip setuptools
