@@ -24,7 +24,12 @@ test = [
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
-    "pytest-homeassistant-custom-component",
+    # Pin pytest-homeassistant-custom-component to a recent version. Without
+    # this, pip's resolver walks the entire 3-year version history looking
+    # for one compatible with the rest of the deps — eventually hitting an
+    # ancient release that tries to build numpy==1.23.2 from source under a
+    # broken setuptools, which fails on Python 3.13+.
+    "pytest-homeassistant-custom-component>=0.13.330,<0.14",
     "aioresponses",
     "pytest-freezer",
     "proconip>=2.0.0",
