@@ -116,7 +116,7 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Create the options flow."""
-        return ProconipPoolControllerOptionsFlowHandler(config_entry)
+        return ProconipPoolControllerOptionsFlowHandler()
 
 
 class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
@@ -125,17 +125,12 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
     VERSION = 1
     MINOR_VERSION = 2
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialize the options handler."""
-        self._config_entry = config_entry
-        self.options = dict(config_entry.options)
-
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Handle device options."""
         connection_tester = ProconipConnectionTester(self.hass)
-        _errors = {}
+        _errors: dict[str, str] = {}
         if user_input is not None:
             try:
                 await connection_tester.async_test_credentials(
@@ -153,34 +148,41 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
                 LOGGER.exception(exception)
                 _errors["base"] = "unknown"
             else:
-                self.options.update(user_input)
-                return self.async_create_entry(data=self.options)
+                new_options = {**self.config_entry.options, **user_input}
+                return self.async_create_entry(data=new_options)
 
+        current = self.config_entry.options
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Required(
                         CONF_URL,
-                        default=(user_input or self.options).get(CONF_URL),  # type: ignore
+                        default=(user_input or current).get(CONF_URL),
                     ): selector.TextSelector(
-                        selector.TextSelectorConfig(type=selector.TextSelectorType.URL),
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.URL,
+                        ),
                     ),
                     vol.Required(
                         CONF_USERNAME,
-                        default=(user_input or self.options).get(CONF_USERNAME),  # type: ignore
+                        default=(user_input or current).get(CONF_USERNAME),
                     ): selector.TextSelector(
-                        selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT),
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.TEXT,
+                        ),
                     ),
                     vol.Required(
                         CONF_PASSWORD,
-                        default=(user_input or self.options).get(CONF_PASSWORD),  # type: ignore
+                        default=(user_input or current).get(CONF_PASSWORD),
                     ): selector.TextSelector(
-                        selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD),
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.PASSWORD,
+                        ),
                     ),
                     vol.Required(
                         CONF_SCAN_INTERVAL,
-                        default=(user_input or self.options).get(CONF_SCAN_INTERVAL, 3),
+                        default=(user_input or current).get(CONF_SCAN_INTERVAL, 3),
                     ): selector.NumberSelector(
                         selector.NumberSelectorConfig(
                             mode=selector.NumberSelectorMode.SLIDER,

@@ -93,17 +93,15 @@ async def test_user_flow_connection_error(
     assert result2["errors"] == {"base": "connection"}
 
 
-async def test_options_flow_handler_init_does_not_raise(
+async def test_options_flow_no_init_required(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
 ) -> None:
-    """Regression test for #70 / #71.
-
-    Modern HA's OptionsFlow.config_entry is a read-only property; the previous
-    `self.config_entry = config_entry` assignment raised AttributeError.
-    """
-    handler = ProconipPoolControllerOptionsFlowHandler(config_entry)
-    assert handler.options == dict(config_entry.options)
+    """Modern HA wires self.config_entry automatically; we don't override __init__."""
+    handler = ProconipPoolControllerOptionsFlowHandler()
+    # No exception. config_entry binding happens via the platform when the
+    # flow actually starts (covered by test_options_flow_happy_path).
+    assert handler is not None
 
 
 async def test_options_flow_shows_init_form(
