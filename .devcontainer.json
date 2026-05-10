@@ -1,6 +1,6 @@
 {
     "name": "ylabonte/proconip-hass",
-    "image": "mcr.microsoft.com/vscode/devcontainers/python:dev-3.13",
+    "image": "mcr.microsoft.com/vscode/devcontainers/python:dev-3.14",
     "mounts": [
         "type=volume,target=${containerWorkspaceFolder}/.venv"
     ],
