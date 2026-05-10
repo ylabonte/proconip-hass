@@ -1,21 +1,20 @@
 """Adds config flow for ProCon.IP Pool Controller."""
 
 from __future__ import annotations
+
 from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import (
     CONF_NAME,
-    CONF_URL,
-    CONF_USERNAME,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
-    CONF_UNIQUE_ID,
+    CONF_URL,
+    CONF_USERNAME,
 )
 from homeassistant.core import (
     callback,
-    HomeAssistant,
 )
 from homeassistant.helpers import selector
 from proconip import (
@@ -24,7 +23,7 @@ from proconip import (
     ProconipApiException,
 )
 
-from .api import ProconipApiClient, ProconipConnectionTester
+from .api import ProconipConnectionTester
 from .const import DOMAIN, LOGGER
 
 
@@ -37,7 +36,7 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
     async def async_step_user(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> config_entries.FlowResult:
+    ) -> config_entries.ConfigFlowResult:
         """Handle a flow initialized by the user."""
         connection_tester = ProconipConnectionTester(self.hass)
         _errors = {}
@@ -77,9 +76,7 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
                         CONF_NAME,
                         default=(user_input or {}).get(CONF_NAME),  # type: ignore
                     ): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.TEXT
-                        ),
+                        selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT),
                     ),
                     vol.Required(
                         CONF_URL,
@@ -89,18 +86,12 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
                     ),
                     vol.Required(
                         CONF_USERNAME,
-                        default=(user_input or {CONF_USERNAME: "admin"}).get(
-                            CONF_USERNAME
-                        ),  # type: ignore
+                        default=(user_input or {CONF_USERNAME: "admin"}).get(CONF_USERNAME),  # type: ignore
                     ): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.TEXT
-                        ),
+                        selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT),
                     ),
                     vol.Required(CONF_PASSWORD): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.PASSWORD
-                        ),
+                        selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD),
                     ),
                     vol.Required(
                         CONF_SCAN_INTERVAL,
@@ -141,7 +132,7 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> config_entries.FlowResult:
+    ) -> config_entries.ConfigFlowResult:
         """Handle device options."""
         connection_tester = ProconipConnectionTester(self.hass)
         _errors = {}
@@ -179,17 +170,13 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_USERNAME,
                         default=(user_input or self.options).get(CONF_USERNAME),  # type: ignore
                     ): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.TEXT
-                        ),
+                        selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT),
                     ),
                     vol.Required(
                         CONF_PASSWORD,
                         default=(user_input or self.options).get(CONF_PASSWORD),  # type: ignore
                     ): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.PASSWORD
-                        ),
+                        selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD),
                     ),
                     vol.Required(
                         CONF_SCAN_INTERVAL,

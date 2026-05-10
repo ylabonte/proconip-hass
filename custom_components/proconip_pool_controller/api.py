@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
 from proconip import (
     ConfigObject,
     DosageControl,
@@ -35,16 +34,12 @@ class ProconipApiClient:
             username=self._username,
             password=self._password,
         )
-        self._get_state_api = GetState(
-            client_session=self._session, config=self._api_config
-        )
-        self._relay_switch_api = RelaySwitch(
-            client_session=self._session, config=self._api_config
-        )
+        self._get_state_api = GetState(client_session=self._session, config=self._api_config)
+        self._relay_switch_api = RelaySwitch(client_session=self._session, config=self._api_config)
         self._dosage_control_api = DosageControl(
             client_session=self._session, config=self._api_config
         )
-        self._most_recent_data = None
+        self._most_recent_data: GetStateData | None = None
 
     async def async_get_data(
         self,
@@ -133,9 +128,7 @@ class ProconipConnectionTester:
         """Initialize connection tester."""
         self.hass = hass
 
-    async def async_test_credentials(
-        self, url: str, username: str, password: str
-    ) -> None:
+    async def async_test_credentials(self, url: str, username: str, password: str) -> None:
         """Validate base url and credentials."""
         client = ProconipApiClient(
             base_url=url,

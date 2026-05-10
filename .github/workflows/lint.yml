@@ -1,32 +1,38 @@
-name: "Lint"
+name: Lint
 
 on:
   push:
-    branches:
-      - "main"
   pull_request:
-    branches:
-      - "main"
+  workflow_call:
+
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.ref }}-${{ github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   lint:
-    name: "Lint using Black"
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     steps:
-        - name: "Checkout the repository"
-          uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-        - name: "Set up Python"
-          uses: actions/setup-python@v6
-          with:
-            python-version: "3.12"
-            cache: "pip"
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: "pip"
+          cache-dependency-path: "pyproject.toml"
 
-        - name: "Install requirements"
-          run: python3 -m pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
 
-        - name: "Run Black"
-          uses: psf/black@stable
-          with:
-            options: "--check --verbose"
-            src: "./custom_components/proconip_pool_controller"
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+      - name: Mypy type check
+        run: mypy custom_components/proconip_pool_controller

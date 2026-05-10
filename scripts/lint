@@ -4,4 +4,11 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-black --check --verbose custom_components/
+echo "==> ruff check"
+ruff check .
+
+echo "==> ruff format check"
+ruff format --check .
+
+echo "==> mypy"
+mypy custom_components/proconip_pool_controller

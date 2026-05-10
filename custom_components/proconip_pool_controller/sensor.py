@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from homeassistant.core import HomeAssistant
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 
 from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
@@ -203,9 +203,7 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
     @property
     def native_value(self) -> float:
         """Return the native value of the sensor."""
-        return self.coordinator.data.digital_input_objects[
-            self._digital_input_no - 1
-        ].value
+        return self.coordinator.data.digital_input_objects[self._digital_input_no - 1].value
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -230,7 +228,7 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
         super().__init__(coordinator=coordinator)
         self._canister_no = canister_no
         self._canister = self.coordinator.data.canister_objects[self._canister_no - 1]
-        match (canister_no):
+        match canister_no:
             case 1:
                 self._attr_entity_registry_visible_default = (
                     self.coordinator.data.is_chlorine_dosage_enabled()
@@ -273,10 +271,8 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
         """Initialize new temperature sensor."""
         super().__init__(coordinator=coordinator)
         self._canister_no = canister_no
-        self._canister = self.coordinator.data.consumption_objects[
-            self._canister_no - 1
-        ]
-        match (canister_no):
+        self._canister = self.coordinator.data.consumption_objects[self._canister_no - 1]
+        match canister_no:
             case 1:
                 self._attr_entity_registry_visible_default = (
                     self.coordinator.data.is_chlorine_dosage_enabled()
@@ -318,8 +314,8 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
         super().__init__(coordinator=coordinator)
         self._relay_id = relay_no - 1
         self._relay = self.coordinator.data.get_relay(relay_id=self._relay_id)
-        self._attr_entity_registry_visible_default = (
-            not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+        self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
+            relay_id=self._relay_id
         )
         self._attr_name = f"Relay No. {relay_no} ({self._relay.name}) State"
         self._attr_unique_id = f"relay_state_{relay_no}_{instance_id}"

@@ -6,11 +6,11 @@ from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
-from homeassistant.exceptions import ConfigEntryAuthFailed
 from proconip import (
     BadCredentialsException,
     BadStatusCodeException,
@@ -31,8 +31,6 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
     config_entry_id: str
     data: GetStateData
 
-    _active_dosage_relays = {}
-
     def __init__(
         self,
         hass: HomeAssistant,
@@ -43,6 +41,7 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         """Initialize."""
         self.client = client
         self.config_entry_id = config_entry_id
+        self._active_dosage_relays: dict[int, bool] = {}
         super().__init__(
             hass=hass,
             logger=LOGGER,
@@ -73,7 +72,7 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
 
         return data
 
-    def is_active_dosage_relay(self, relay_id) -> bool:
+    def is_active_dosage_relay(self, relay_id: int) -> bool:
         """Return True if the given relay_id refers to an active dosage relay."""
         if relay_id in self._active_dosage_relays:
             return self._active_dosage_relays[relay_id]

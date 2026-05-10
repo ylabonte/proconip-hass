@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.number import NumberEntity, NumberMode
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -18,9 +18,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_devices: AddEntitiesCallback
 ) -> None:
     """Set up the select platform."""
-    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
-        entry.entry_id
-    ]
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
     relays = []
     for i in range(number_of_relays):
@@ -42,9 +40,7 @@ async def async_setup_entry(
     async_add_devices(relays)
 
 
-class ProconipPoolControllerDosageRelayTimer(
-    ProconipPoolControllerEntity, NumberEntity
-):
+class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, NumberEntity):
     """ProCon.IP Pool Controller relay dosage relay timer class."""
 
     _attr_mode = NumberMode.BOX

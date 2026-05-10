@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.select import SelectEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -46,8 +46,8 @@ class ProconipPoolControllerRelaySelect(ProconipPoolControllerEntity, SelectEnti
         self._relay_id = relay_no - 1
         self._relay = coordinator.data.get_relay(relay_id=self._relay_id)
         self._attr_available = available
-        self._attr_entity_registry_visible_default = (
-            not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+        self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
+            relay_id=self._relay_id
         )
         self._attr_name = f"Relay No. {relay_no}: {self._relay.name}"
         self._attr_options = (
