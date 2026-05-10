@@ -6,7 +6,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from proconip import (
     ConfigObject,
+    DmxControl,
     DosageControl,
+    GetDmxData,
     GetState,
     GetStateData,
     RelaySwitch,
@@ -37,6 +39,9 @@ class ProconipApiClient:
         self._get_state_api = GetState(client_session=self._session, config=self._api_config)
         self._relay_switch_api = RelaySwitch(client_session=self._session, config=self._api_config)
         self._dosage_control_api = DosageControl(
+            client_session=self._session, config=self._api_config
+        )
+        self._dmx_control_api = DmxControl(
             client_session=self._session, config=self._api_config
         )
         self._most_recent_data: GetStateData | None = None
@@ -119,6 +124,14 @@ class ProconipApiClient:
         return await self._dosage_control_api.async_ph_plus_dosage(
             dosage_duration=duration_in_seconds,
         )
+
+    async def async_get_dmx(self) -> GetDmxData:
+        """Read the current DMX channel state from the controller."""
+        return await self._dmx_control_api.async_get_dmx()
+
+    async def async_set_dmx(self, dmx_data: GetDmxData) -> str:
+        """Push the full 16-channel DMX state to the controller."""
+        return await self._dmx_control_api.async_set(data=dmx_data)
 
 
 class ProconipConnectionTester:

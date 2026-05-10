@@ -43,6 +43,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         ),
         update_interval_in_seconds=entry.options[CONF_SCAN_INTERVAL],
         config_entry_id=entry.entry_id,
+        config_entry=entry,
     )
     # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
     await hass.data[DOMAIN][entry.entry_id].async_config_entry_first_refresh()
