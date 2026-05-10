@@ -1,4 +1,4 @@
-"""BlueprintEntity class."""
+"""ProconipPoolControllerEntity class."""
 
 from __future__ import annotations
 

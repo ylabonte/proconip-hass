@@ -78,15 +78,3 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
             return self._active_dosage_relays[relay_id]
 
         return False
-
-    # @property
-    # def config_entry(self):
-    #     """Property wrapping the _config_entry attribite."""
-    #     return self._config_entry
-
-    # @config_entry.setter
-    # def config_entry(self, value):
-    #     """Setter for _config_entry attribute, updating the update_interval attribute."""
-    #     self._config_entry = value
-    #     if value is not None and CONF_SCAN_INTERVAL in value.options:
-    #         self.update_interval = timedelta(seconds=value.options[CONF_SCAN_INTERVAL])
