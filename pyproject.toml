@@ -1,0 +1,74 @@
+[project]
+name = "proconip-hass"
+description = "Home Assistant integration for the ProCon.IP pool controller (HACS-distributed)."
+version = "0.0.0"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [
+  { name = "Yannic Labonte", email = "yannic.labonte@gmail.com" },
+]
+
+# This project is NOT published to PyPI. HACS distributes the
+# custom_components/proconip_pool_controller/ directory directly. Runtime
+# dependencies are declared in custom_components/proconip_pool_controller/
+# manifest.json and installed by Home Assistant. The [project] block exists
+# so editable installs (pip install -e ".[dev,test]") work for development.
+
+[project.optional-dependencies]
+dev = ["ruff", "mypy", "pre-commit"]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-homeassistant-custom-component",
+    "aioresponses",
+    "pytest-freezer",
+]
+
+[tool.setuptools]
+# Minimal package set so `pip install -e .` succeeds. We don't actually ship
+# anything via this — HA loads the integration from custom_components/.
+packages = []
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = ["config/", ".devcontainer-lock.json"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "SIM", "RET", "PTH"]
+ignore = [
+    "B905",   # zip() without strict= — not critical here
+    "RET504", # Unnecessary assignment before return — readability tradeoff
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E501"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+strict_equality = true
+files = ["custom_components/proconip_pool_controller"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--cov=custom_components/proconip_pool_controller --cov-report=term-missing --cov-report=xml --cov-fail-under=80"
+
+[tool.coverage.run]
+source = ["custom_components/proconip_pool_controller"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
