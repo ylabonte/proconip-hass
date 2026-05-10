@@ -1,13 +1,16 @@
 {
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.formatOnPaste": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
-        "editor.formatOnType": true,
         "editor.tabSize": 4,
         "files.eol": "\n",
         "files.trimTrailingWhitespace": true,
-        "pylint.enabled": true
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
     },
-    "python.analysis.autoImportCompletions": true
+    "ruff.importStrategy": "fromEnvironment",
+    "python.analysis.autoImportCompletions": true,
+    "pylint.enabled": false
 }

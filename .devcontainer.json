@@ -1,6 +1,6 @@
 {
     "name": "ylabonte/proconip-hass",
-    "image": "mcr.microsoft.com/vscode/devcontainers/python:dev-3.12",
+    "image": "mcr.microsoft.com/vscode/devcontainers/python:dev-3.13",
     "postCreateCommand": "scripts/setup",
     "forwardPorts": [
         8123
@@ -15,25 +15,29 @@
         "vscode": {
             "extensions": [
                 "ms-python.python",
-                "ms-python.black-formatter",
                 "ms-python.vscode-pylance",
+                "ms-python.mypy-type-checker",
+                "charliermarsh.ruff",
                 "ryanluker.vscode-coverage-gutters",
                 "github.vscode-github-actions",
                 "github.vscode-pull-request-github"
             ],
             "settings": {
-                "editor.defaultFormatter": "ms-python.black-formatter",
-                "editor.formatOnSave": true,
+                "[python]": {
+                    "editor.defaultFormatter": "charliermarsh.ruff",
+                    "editor.formatOnSave": true,
+                    "editor.codeActionsOnSave": {
+                        "source.fixAll.ruff": "explicit",
+                        "source.organizeImports.ruff": "explicit"
+                    }
+                },
                 "editor.tabSize": 4,
                 "files.eol": "\n",
                 "files.trimTrailingWhitespace": true,
-                "python.pythonPath": "/usr/local/bin/python3.12",
-                "python.autoComplete.extraPaths": [
-                    "/home/vscode/.local/lib/python3.12/site-packages",
-                    "/usr/local/lib/python3.12/site-packages",
-                    "/usr/local/lib/python3.12",
-                    "/usr/local/lib/python3.12/lib-dynload"
-                ],
+                "ruff.importStrategy": "fromEnvironment",
+                "mypy-type-checker.importStrategy": "fromEnvironment",
+                "mypy-type-checker.args": ["--config-file=pyproject.toml"],
+                "python.defaultInterpreterPath": "/usr/local/bin/python3.13",
                 "python.analysis.typeCheckingMode": "basic",
                 "python.analysis.diagnosticMode": "workspace",
                 "python.analysis.include": ["custom_components/**/*.py"],
