@@ -18,7 +18,7 @@ from homeassistant.core import (
     HomeAssistant,
 )
 from homeassistant.helpers import selector
-from proconip.api import (
+from proconip import (
     BadCredentialsException,
     BadStatusCodeException,
     ProconipApiException,

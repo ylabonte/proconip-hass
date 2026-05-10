@@ -5,15 +5,12 @@ from __future__ import annotations
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from proconip.definitions import (
+from proconip import (
     ConfigObject,
-    GetStateData,
-)
-
-from proconip.api import (
-    GetState,
-    RelaySwitch,
     DosageControl,
+    GetState,
+    GetStateData,
+    RelaySwitch,
 )
 
 

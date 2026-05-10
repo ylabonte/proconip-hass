@@ -11,11 +11,12 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 from homeassistant.exceptions import ConfigEntryAuthFailed
-from proconip.definitions import GetStateData
-from proconip.api import (
+from proconip import (
     BadCredentialsException,
     BadStatusCodeException,
+    GetStateData,
     ProconipApiException,
+    TimeoutException,
 )
 
 from .api import ProconipApiClient
@@ -57,7 +58,11 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
             data = await self.client.async_get_data()
         except BadCredentialsException as exception:
             raise ConfigEntryAuthFailed(exception) from exception
-        except (BadStatusCodeException, ProconipApiException) as exception:
+        except (
+            BadStatusCodeException,
+            ProconipApiException,
+            TimeoutException,
+        ) as exception:
             raise UpdateFailed(exception) from exception
 
         self._active_dosage_relays = {
