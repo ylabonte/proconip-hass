@@ -10,7 +10,10 @@ async def test_redox_sensor_created(
     hass: HomeAssistant,
     setup_integration: MockConfigEntry,
 ) -> None:
-    state = hass.states.get("sensor.redox_sensor")
+    eid = next(
+        eid for eid in hass.states.async_entity_ids("sensor") if eid.endswith("_redox_sensor")
+    )
+    state = hass.states.get(eid)
     assert state is not None
     assert state.state not in ("unknown", "unavailable")
 
@@ -19,7 +22,8 @@ async def test_ph_sensor_created(
     hass: HomeAssistant,
     setup_integration: MockConfigEntry,
 ) -> None:
-    state = hass.states.get("sensor.ph_sensor")
+    eid = next(eid for eid in hass.states.async_entity_ids("sensor") if eid.endswith("_ph_sensor"))
+    state = hass.states.get(eid)
     assert state is not None
 
 

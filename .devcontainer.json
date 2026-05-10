@@ -1,7 +1,10 @@
 {
     "name": "ylabonte/proconip-hass",
     "image": "mcr.microsoft.com/vscode/devcontainers/python:dev-3.13",
-    "postCreateCommand": "scripts/setup",
+    "mounts": [
+        "type=volume,target=${containerWorkspaceFolder}/.venv"
+    ],
+    "postCreateCommand": "sudo chown $(id -u):$(id -g) .venv && scripts/setup",
     "forwardPorts": [
         8123
     ],
@@ -37,7 +40,7 @@
                 "ruff.importStrategy": "fromEnvironment",
                 "mypy-type-checker.importStrategy": "fromEnvironment",
                 "mypy-type-checker.args": ["--config-file=pyproject.toml"],
-                "python.defaultInterpreterPath": "/usr/local/bin/python3.13",
+                "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
                 "python.analysis.typeCheckingMode": "basic",
                 "python.analysis.diagnosticMode": "workspace",
                 "python.analysis.include": ["custom_components/**/*.py"],

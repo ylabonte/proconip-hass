@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "proconip-hass"
 description = "Home Assistant integration for the ProCon.IP pool controller (HACS-distributed)."
@@ -47,7 +51,10 @@ ignore = [
 "tests/**" = ["E501"]
 
 [tool.mypy]
-python_version = "3.13"
+# Bumped to 3.14 because Home Assistant Core 2026.5+ uses 3.14-only syntax
+# (PEP 758 parenthesized except expressions) in homeassistant/config_entries.py.
+# Mypy follows imports into HA's source and must be able to parse it.
+python_version = "3.14"
 warn_return_any = true
 warn_unused_configs = true
 warn_redundant_casts = true

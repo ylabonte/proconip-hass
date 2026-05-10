@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -65,7 +65,7 @@ class ProconipRedoxSensor(ProconipPoolControllerEntity, SensorEntity):
 
     _attr_icon = "mdi:gauge"
     _attr_name = "Redox sensor"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
 
     def __init__(
@@ -93,7 +93,7 @@ class ProconipPhSensor(ProconipPoolControllerEntity, SensorEntity):
 
     _attr_icon = "mdi:gauge"
     _attr_name = "pH sensor"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
 
     def __init__(
@@ -122,7 +122,7 @@ class ProconipTemperatureSensor(ProconipPoolControllerEntity, SensorEntity):
     _attr_icon = "mdi:thermometer"
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = "°C"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
 
     def __init__(
@@ -149,7 +149,7 @@ class ProconipAnalogSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Analog Sensor class."""
 
     _attr_icon = "mdi:sine-wave"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
 
     def __init__(
@@ -181,7 +181,7 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Digital Input Sensor class."""
 
     _attr_icon = "mdi:import"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
 
     def __init__(
@@ -215,7 +215,7 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Canister Sensor class."""
 
     _attr_icon = "mdi:bottle-tonic-outline"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
 
     def __init__(
@@ -259,7 +259,7 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
     """ProCon.IP Canister Consumption Sensor class."""
 
     _attr_icon = "mdi:bottle-tonic-plus-outline"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
 
     def __init__(
