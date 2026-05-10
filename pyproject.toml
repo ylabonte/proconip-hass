@@ -23,6 +23,7 @@ test = [
     "pytest-homeassistant-custom-component",
     "aioresponses",
     "pytest-freezer",
+    "proconip>=2.0.0",
 ]
 
 [tool.setuptools]
@@ -71,4 +72,8 @@ exclude_lines = [
     "pragma: no cover",
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
+]
+exclude_also = [
+    # async_migrate_entry is being removed in a follow-up commit; not worth testing.
+    "async def async_migrate_entry",
 ]
