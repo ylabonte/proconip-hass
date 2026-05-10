@@ -49,7 +49,6 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         """Initialize."""
         self.client = client
         self.config_entry_id = config_entry_id
-        self.config_entry = config_entry
         self._active_dosage_relays: dict[int, bool] = {}
 
         # DMX state
@@ -62,6 +61,7 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
             hass=hass,
             logger=LOGGER,
             name=DOMAIN,
+            config_entry=config_entry,
             update_interval=timedelta(seconds=update_interval_in_seconds),
             update_method=self.proconip_update_method,
         )

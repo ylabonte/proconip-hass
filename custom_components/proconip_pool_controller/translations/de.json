@@ -4,18 +4,62 @@
             "user": {
                 "description": "Für weitere Hilfe zur Integration siehe hier: https://github.com/ylabonte/proconip-hass",
                 "data": {
-                    "name": "Name der Instanz (z.B. \"Whirlpool\")",
-                    "url": "Adresse der Poolsteuerung (URL)",
-                    "scan_interval": "Aktualisierungsintervall in Sekunden",
+                    "name": "Instanzname (z.B. 'Whirlpool')",
+                    "url": "Controller-Adresse (URL)",
+                    "scan_interval": "Abfrageintervall in Sekunden",
                     "username": "Benutzername",
                     "password": "Passwort"
                 }
             }
         },
         "error": {
-            "auth": "Benutzername/Passwort ungültig.",
-            "connection": "Verbindung mit dem Server kann nicht hergestellt werden.",
-            "unknown": "Ein unbekannter Fehler ist aufgetreten."
+            "auth": "Benutzername/Passwort ist falsch.",
+            "connection": "Verbindung zum Server nicht möglich.",
+            "unknown": "Unbekannter Fehler aufgetreten."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "description": "Verbindungseinstellungen aktualisieren.",
+                "data": {
+                    "url": "Controller-Adresse (URL)",
+                    "username": "Benutzername",
+                    "password": "Passwort",
+                    "scan_interval": "Abfrageintervall in Sekunden"
+                }
+            },
+            "menu": {
+                "title": "Integration verwalten",
+                "menu_options": {
+                    "init": "Verbindungseinstellungen",
+                    "dmx_lights_menu": "DMX-Lichter",
+                    "save_and_finish": "Speichern und beenden"
+                }
+            },
+            "dmx_lights_menu": {
+                "title": "DMX-Lichter",
+                "menu_options": {
+                    "dmx_light_add": "Licht hinzufügen",
+                    "menu": "Zurück"
+                }
+            },
+            "dmx_light_add": {
+                "title": "DMX-Licht hinzufügen",
+                "data": {
+                    "name": "Name",
+                    "type": "Lichttyp",
+                    "start_channel": "Startkanal (1-16)"
+                }
+            }
+        },
+        "error": {
+            "auth": "Benutzername/Passwort ist falsch.",
+            "connection": "Verbindung zum Server nicht möglich.",
+            "unknown": "Unbekannter Fehler aufgetreten.",
+            "out_of_range": "Kanalbereich überschreitet 16. Wähle einen kleineren Startkanal.",
+            "overlap": "Diese Kanäle überschneiden sich mit einem bereits konfigurierten Licht.",
+            "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits."
         }
     }
 }

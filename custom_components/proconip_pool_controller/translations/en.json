@@ -17,5 +17,49 @@
             "connection": "Unable to connect to the server.",
             "unknown": "Unknown error occurred."
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "description": "Update connection settings.",
+                "data": {
+                    "url": "Controller Address (URL)",
+                    "username": "Username",
+                    "password": "Password",
+                    "scan_interval": "Scan/update interval in seconds"
+                }
+            },
+            "menu": {
+                "title": "Manage integration",
+                "menu_options": {
+                    "init": "Connection settings",
+                    "dmx_lights_menu": "DMX lights",
+                    "save_and_finish": "Save and finish"
+                }
+            },
+            "dmx_lights_menu": {
+                "title": "DMX lights",
+                "menu_options": {
+                    "dmx_light_add": "Add light",
+                    "menu": "Back"
+                }
+            },
+            "dmx_light_add": {
+                "title": "Add DMX light",
+                "data": {
+                    "name": "Name",
+                    "type": "Light type",
+                    "start_channel": "Start channel (1-16)"
+                }
+            }
+        },
+        "error": {
+            "auth": "Username/Password is wrong.",
+            "connection": "Unable to connect to the server.",
+            "unknown": "Unknown error occurred.",
+            "out_of_range": "Channel range exceeds 16. Pick a smaller start channel.",
+            "overlap": "These channels overlap with another configured light.",
+            "duplicate": "A light with this name (or slug) already exists."
+        }
     }
 }
