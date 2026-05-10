@@ -40,10 +40,17 @@
                 "ruff.importStrategy": "fromEnvironment",
                 "mypy-type-checker.importStrategy": "fromEnvironment",
                 "mypy-type-checker.args": ["--config-file=pyproject.toml"],
+                "mypy-type-checker.preferDaemon": true,
+                "mypy-type-checker.reportingScope": "file",
                 "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
                 "python.analysis.typeCheckingMode": "basic",
-                "python.analysis.diagnosticMode": "workspace",
+                "python.analysis.diagnosticMode": "openFilesOnly",
                 "python.analysis.include": ["custom_components/**/*.py"],
+                "python.analysis.exclude": [
+                    "**/.venv/**",
+                    "**/__pycache__/**",
+                    "**/.git/**"
+                ],
                 "python.analysis.autoSearchPaths": true,
                 "python.analysis.indexing": true,
                 "python.analysis.autoImportCompletions": true,
