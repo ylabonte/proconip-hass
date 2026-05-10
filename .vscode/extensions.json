@@ -1,5 +1,15 @@
 {
     "recommendations": [
-        "ms-python.black-formatter"
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff",
+        "ryanluker.vscode-coverage-gutters",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github"
+    ],
+    "unwantedRecommendations": [
+        "ms-python.black-formatter",
+        "ms-python.pylint"
     ]
 }
