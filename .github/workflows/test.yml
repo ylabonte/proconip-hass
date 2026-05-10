@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}-${{ github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: "pyproject.toml"
+
+      - name: Install package and test dependencies
+        run: pip install -e ".[test]"
+
+      - name: Run tests with coverage
+        run: pytest
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 7

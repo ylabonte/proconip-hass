@@ -8,8 +8,15 @@ on:
 permissions: {}
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  lint:
+    uses: ./.github/workflows/lint.yml
+
   release:
     name: "Release"
+    needs: [test, lint]
     runs-on: "ubuntu-latest"
     permissions:
       contents: write
