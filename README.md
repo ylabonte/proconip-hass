@@ -48,9 +48,11 @@
 
 ## Install with HACS (recommended)
 
-> ⚠️ This integration is in the process of being submitted to the HACS
-> default list. Until that submission is merged, follow the manual steps below
-> to add the repository as a custom HACS repository.
+> ⚠️ **HACS default-list submission pending.** Once 2.0.0 is released and
+> the [hacs/default PR](https://github.com/hacs/default) merges, you'll
+> be able to install this directly from the HACS default integration
+> list without adding a custom repository. Until then, follow the manual
+> custom-repository steps below.
 
 If you have not already done so, you should first install [HACS (Home Assistant Community Store)](https://hacs.xyz/).
 It is the usual way to install custom integrations and keep them up to date.
