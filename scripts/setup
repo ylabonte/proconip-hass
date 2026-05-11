@@ -43,3 +43,9 @@ fi
 
 .venv/bin/python -m pip install --upgrade pip setuptools
 .venv/bin/python -m pip install --upgrade -e ".[dev,test]"
+
+# Pre-install home-assistant-frontend so the dev HA instance doesn't have to
+# race lazy-install vs first-import on startup (it loses, frontend ends up
+# in recovery mode). This package is ~50 MB and HA Core does NOT install it
+# automatically — it's a runtime-only lazy dep.
+.venv/bin/python -m pip install --upgrade home-assistant-frontend

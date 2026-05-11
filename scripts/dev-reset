@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+# Reset the dev Home Assistant config state to a clean slate.
+#
+# Useful when stale entries in config/.storage/ keep loading integrations
+# whose Python deps aren't installed (because you previously had
+# `default_config:` in configuration.yaml and HA persisted those entries).
+#
+# What this script does:
+#   - Asks for confirmation.
+#   - Removes EVERYTHING under config/ except configuration.yaml.
+#   - Leaves configuration.yaml alone so your minimal dev config survives.
+#
+# After running this, start Home Assistant again. It will boot fresh,
+# walk you through onboarding (create an admin user), and let you re-add
+# the proconip_pool_controller integration via the UI.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+CONFIG_DIR="${PWD}/config"
+
+if [ ! -d "$CONFIG_DIR" ]; then
+    echo "No config/ directory found — nothing to reset."
+    exit 0
+fi
+
+echo "This will remove ALL Home Assistant state in:"
+echo "  $CONFIG_DIR"
+echo
+echo "configuration.yaml will be preserved. Everything else will be deleted:"
+echo "  - .storage/ (all config entries, auth, entity registry, ...)"
+echo "  - home-assistant_v2.db (recorder database)"
+echo "  - logs, blueprints/, deps/, .HA_VERSION, ..."
+echo
+
+if [ "${1:-}" != "-y" ]; then
+    read -r -p "Type 'reset' to confirm: " answer
+    if [ "$answer" != "reset" ]; then
+        echo "Aborted."
+        exit 1
+    fi
+fi
+
+# Save configuration.yaml to a temp location, wipe config/, restore yaml.
+TMP="$(mktemp)"
+trap 'rm -f "$TMP"' EXIT
+
+if [ -f "$CONFIG_DIR/configuration.yaml" ]; then
+    cp "$CONFIG_DIR/configuration.yaml" "$TMP"
+fi
+
+# rm -rf the contents (not the dir itself, in case it's a mount point).
+find "$CONFIG_DIR" -mindepth 1 -delete
+
+# Restore configuration.yaml.
+if [ -s "$TMP" ]; then
+    cp "$TMP" "$CONFIG_DIR/configuration.yaml"
+fi
+
+echo
+echo "Done. HA state cleared. Start Home Assistant again to re-onboard."

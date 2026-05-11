@@ -83,6 +83,7 @@ source .venv/bin/activate
 | `ruff format .`                        | Auto-format your changes.                                                    |
 | `ruff check --fix .`                   | Auto-fix safe lint findings.                                                 |
 | `scripts/develop`                      | Boot a local Home Assistant on port 8123 with this integration loaded.       |
+| `scripts/dev-reset`                    | Wipe `config/.storage/`, the recorder DB, logs, etc. — fresh HA state on next run. Keeps `config/configuration.yaml`. Use when stale config entries (e.g. from a previous `default_config:` run) cause lazy-install errors. |
 
 ## Code conventions
 
