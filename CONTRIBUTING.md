@@ -38,6 +38,15 @@ After the container is up, VS Code uses
 `/workspaces/proconip-hass/.venv/bin/python` as the interpreter, and the
 Ruff + Mypy extensions pick up the project's tool versions automatically.
 
+A **mock ProCon.IP controller** starts automatically alongside the
+devcontainer (`tools/proconip_mock/`, an aiohttp server with drifting
+sensor values + mutable relay/DMX state). It listens on
+http://127.0.0.1:8080 with basic auth `admin`/`admin`. When you add the
+integration in HA, point it at that URL to exercise the full flow
+without owning real hardware. The mock task's logs show up in VS Code's
+**Terminal → ProCon.IP mock server** panel; restart it via the Command
+Palette (`Tasks: Restart Running Task`) if you need a fresh state.
+
 ### Option B — Local dev (host machine)
 
 Requirements:
@@ -84,6 +93,7 @@ source .venv/bin/activate
 | `ruff check --fix .`                   | Auto-fix safe lint findings.                                                 |
 | `scripts/develop`                      | Boot a local Home Assistant on port 8123 with this integration loaded.       |
 | `scripts/dev-reset`                    | Wipe `config/.storage/`, the recorder DB, logs, etc. — fresh HA state on next run. Keeps `config/configuration.yaml`. Use when stale config entries (e.g. from a previous `default_config:` run) cause lazy-install errors. |
+| `scripts/mock-server`                  | Run the mock ProCon.IP controller on http://127.0.0.1:8080 (basic auth `admin`/`admin`). Auto-started by the devcontainer; only run manually for host-side dev. Override with `MOCK_PORT=…`, `MOCK_USER=…`, `MOCK_PASS=…`. |
 
 ## Code conventions
 

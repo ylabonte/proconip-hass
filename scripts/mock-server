@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# Launch the mock ProCon.IP controller (aiohttp-based, drifting sensors +
+# mutable relay/DMX state). Intended for dev use inside the devcontainer
+# so you can exercise the Home Assistant integration end-to-end without
+# owning real hardware.
+#
+# Default config: 127.0.0.1:8080, basic auth admin/admin. Override via
+# env vars:
+#
+#   MOCK_HOST=0.0.0.0 MOCK_PORT=9999 MOCK_USER=foo MOCK_PASS=bar scripts/mock-server
+#
+# Add an integration entry in Home Assistant pointing at
+# http://127.0.0.1:8080 with admin/admin to talk to this mock.
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+PYTHON=".venv/bin/python"
+if [ ! -x "$PYTHON" ]; then
+    echo "Error: $PYTHON not found. Run scripts/setup first." >&2
+    exit 1
+fi
+
+exec "$PYTHON" -m tools.proconip_mock \
+    --host "${MOCK_HOST:-127.0.0.1}" \
+    --port "${MOCK_PORT:-8080}" \
+    --username "${MOCK_USER:-admin}" \
+    --password "${MOCK_PASS:-admin}"

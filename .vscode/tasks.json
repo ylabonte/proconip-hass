@@ -2,6 +2,38 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "ProCon.IP mock server",
+            "detail": "Mock ProCon.IP controller on http://127.0.0.1:8080 (admin/admin). Auto-starts with the devcontainer; restart with `Tasks: Restart Running Task`.",
+            "type": "shell",
+            "command": "scripts/mock-server",
+            "isBackground": true,
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
+            "presentation": {
+                "panel": "dedicated",
+                "reveal": "silent",
+                "echo": true,
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": {
+                "pattern": [
+                    {
+                        "regexp": ".",
+                        "file": 1,
+                        "location": 2,
+                        "message": 3
+                    }
+                ],
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "ProCon.IP mock listening on",
+                    "endsPattern": "ProCon.IP mock listening on"
+                }
+            }
+        },
+        {
             "label": "Run Home Assistant on port 8123",
             "type": "shell",
             "command": "scripts/develop",

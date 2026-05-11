@@ -6,9 +6,14 @@
     ],
     "postCreateCommand": "sudo chown $(id -u):$(id -g) .venv && scripts/setup",
     "forwardPorts": [
+        8080,
         8123
     ],
     "portsAttributes": {
+        "8080": {
+            "label": "ProCon.IP mock",
+            "onAutoForward": "silent"
+        },
         "8123": {
             "label": "Home Assistant",
             "onAutoForward": "notify"
