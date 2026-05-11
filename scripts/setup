@@ -62,8 +62,9 @@ fi
     home-assistant-intents \
     ha-ffmpeg \
     PyTurboJPEG \
-    rf-protocols \
-    infrared-protocols \
+    'rf-protocols==2.2.0' \
+    'infrared-protocols==2.0.0' \
+    mutagen \
     av \
     PyMetno \
     radios \

@@ -24,9 +24,13 @@ fi
 ## without resulting to symlinks.
 export PYTHONPATH="${PYTHONPATH}:${PWD}/custom_components"
 
-# Start Home Assistant. --skip-pip stops HA from trying to lazy-install
-# missing component dependencies (ffmpeg, conversation, camera, …) at
-# runtime, which would otherwise produce file-system churn that trips
-# Pylance/mypy LSPs into "Server[N] disconnected unexpectedly" popups.
-# Components whose deps aren't installed fail fast and cleanly.
-"$HASS" --config "${PWD}/config" --debug --skip-pip
+# Start Home Assistant. We deliberately do NOT pass --skip-pip:
+# HA's helpers/service.py:_base_components() unconditionally imports
+# ~19 built-in components at module-load time, each with its own
+# transitive Python deps (mutagen, pymicro_vad, …). Keeping --skip-pip
+# would leave gaps in that import chain and crash every get_services
+# WebSocket call (the frontend can't render without it). Letting HA
+# lazy-install the missing pieces on first boot is slower once but
+# produces a working UI. Subsequent boots are fast because the deps
+# are cached.
+"$HASS" --config "${PWD}/config" --debug
