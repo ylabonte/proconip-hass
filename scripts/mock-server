@@ -18,10 +18,25 @@ set -e
 cd "$(dirname "$0")/.."
 
 PYTHON=".venv/bin/python"
-if [ ! -x "$PYTHON" ]; then
-    echo "Error: $PYTHON not found. Run scripts/setup first." >&2
-    exit 1
-fi
+
+# When the devcontainer task runs this on folderOpen, postCreateCommand
+# (scripts/setup) may still be installing into .venv. Wait up to ~3
+# minutes for aiohttp to appear before exec'ing — otherwise we'd crash
+# with ModuleNotFoundError.
+WAIT_SECONDS=180
+WAITED=0
+while ! [ -x "$PYTHON" ] || ! "$PYTHON" -c "import aiohttp" >/dev/null 2>&1; do
+    if [ "$WAITED" -ge "$WAIT_SECONDS" ]; then
+        echo "Error: .venv still doesn't have aiohttp after ${WAIT_SECONDS}s." >&2
+        echo "Run 'scripts/setup' manually to diagnose." >&2
+        exit 1
+    fi
+    if [ "$WAITED" -eq 0 ]; then
+        echo "Waiting for .venv to be ready (scripts/setup still running?)..."
+    fi
+    sleep 2
+    WAITED=$((WAITED + 2))
+done
 
 exec "$PYTHON" -m tools.proconip_mock \
     --host "${MOCK_HOST:-127.0.0.1}" \

@@ -12,6 +12,7 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "--debug",
+                "--skip-pip",
                 "-c",
                 "config"
             ],

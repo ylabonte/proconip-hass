@@ -24,5 +24,9 @@ fi
 ## without resulting to symlinks.
 export PYTHONPATH="${PYTHONPATH}:${PWD}/custom_components"
 
-# Start Home Assistant
-"$HASS" --config "${PWD}/config" --debug
+# Start Home Assistant. --skip-pip stops HA from trying to lazy-install
+# missing component dependencies (ffmpeg, conversation, camera, …) at
+# runtime, which would otherwise produce file-system churn that trips
+# Pylance/mypy LSPs into "Server[N] disconnected unexpectedly" popups.
+# Components whose deps aren't installed fail fast and cleanly.
+"$HASS" --config "${PWD}/config" --debug --skip-pip
