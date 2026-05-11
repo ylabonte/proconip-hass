@@ -1,13 +1,37 @@
-# https://www.home-assistant.io/integrations/default_config/
-default_config:
+# Minimal Home Assistant config for developing this integration.
+#
+# We intentionally do NOT use `default_config:` here, even though it's
+# what real users have. `default_config` pulls in ~30 built-in components
+# (camera, ffmpeg, bluetooth, dhcp, ssdp, conversation, mobile_app, …),
+# each with runtime deps that aren't pre-installed in pytest-homeassistant-
+# custom-component's HA install. HA tries to lazy-pip-install them on
+# startup, the import races the install, most fail with ModuleNotFoundError,
+# the file-system churn triggers Pylance/mypy LSP restarts (the
+# "Server[N] disconnected unexpectedly" popups), and HA ends up in
+# recovery mode because the frontend dep couldn't load in time.
+#
+# The components below give us:
+#   - the frontend UI (to add and configure the integration from the UI),
+#   - the config-entries / device-registry pages,
+#   - the HTTP API,
+#   - logging with our integration set to debug.
+#
+# If you need to test against the real-user "default_config" stack, run
+# `.venv/bin/python -m homeassistant --config config --skip-pip` once to
+# let HA install everything, then `--skip-pip-packages
+# home-assistant-frontend` on subsequent boots to skip re-checks.
 
-# https://www.home-assistant.io/integrations/logger/
+frontend:
+config:
+api:
+http:
 logger:
   default: info
   logs:
     custom_components.proconip_pool_controller: debug
 
-# Enable VSCode debugging
-debugpy:
-  start: true
-  wait: true
+# debugpy: deliberately omitted.
+# When you launch HA via the VS Code "Home Assistant" run configuration,
+# debugpy is already attached via the launcher. Enabling HA's debugpy:
+# integration here would start a second debugger server on :5678 — only
+# add it back if you're attaching from outside VS Code.
