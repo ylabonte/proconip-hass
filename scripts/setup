@@ -49,3 +49,29 @@ fi
 # in recovery mode). This package is ~50 MB and HA Core does NOT install it
 # automatically — it's a runtime-only lazy dep.
 .venv/bin/python -m pip install --upgrade home-assistant-frontend
+
+# Pre-install deps for HA's hardcoded "base components" list. HA's
+# helpers/service.py:_base_components() imports ai_task / camera /
+# conversation / ffmpeg / tts / etc. *unconditionally* — --skip-pip on the
+# HA process doesn't help because the imports happen at module-load time,
+# not via the pip-install-on-demand path. The frontend's `get_services`
+# call fires _base_components() and crashes on the first missing dep,
+# which blocks every UI render. Pre-installing covers the chain.
+.venv/bin/python -m pip install --upgrade \
+    hassil \
+    home-assistant-intents \
+    ha-ffmpeg \
+    PyTurboJPEG \
+    rf-protocols \
+    infrared-protocols \
+    av \
+    PyMetno \
+    radios \
+    pycountry \
+    aiodhcpwatcher \
+    aiousbwatcher \
+    aiodiscover \
+    cached-ipaddress \
+    async-upnp-client \
+    file-read-backwards \
+    serialx
