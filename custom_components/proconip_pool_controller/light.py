@@ -15,11 +15,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_DMX_LIGHTS, DOMAIN, LOGGER
+from .const import CONF_DMX_LIGHTS, DOMAIN, LIGHT_TYPE_CHANNEL_COUNT, LOGGER
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 from .entity import ProconipPoolControllerEntity
-
-LIGHT_TYPE_CHANNEL_COUNT = {"dimmer": 1, "rgb": 3, "rgbw": 4}
 
 
 async def async_setup_entry(
@@ -108,7 +106,7 @@ class ProconipDmxLightEntityBase(ProconipPoolControllerEntity, LightEntity):
 
 
 class ProconipDmxDimmerLight(ProconipDmxLightEntityBase):
-    _channel_count = 1
+    _channel_count = LIGHT_TYPE_CHANNEL_COUNT["dimmer"]
     _attr_color_mode = ColorMode.BRIGHTNESS
     _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
 
@@ -127,7 +125,7 @@ class ProconipDmxDimmerLight(ProconipDmxLightEntityBase):
 
 
 class ProconipDmxRgbLight(ProconipDmxLightEntityBase):
-    _channel_count = 3
+    _channel_count = LIGHT_TYPE_CHANNEL_COUNT["rgb"]
     _attr_color_mode = ColorMode.RGB
     _attr_supported_color_modes = {ColorMode.RGB}
 
@@ -168,7 +166,7 @@ class ProconipDmxRgbLight(ProconipDmxLightEntityBase):
 
 
 class ProconipDmxRgbwLight(ProconipDmxLightEntityBase):
-    _channel_count = 4
+    _channel_count = LIGHT_TYPE_CHANNEL_COUNT["rgbw"]
     _attr_color_mode = ColorMode.RGBW
     _attr_supported_color_modes = {ColorMode.RGBW}
 

@@ -26,10 +26,8 @@ from proconip import (
 )
 
 from .api import ProconipConnectionTester
-from .const import CONF_DMX_LIGHTS, DOMAIN, LOGGER
+from .const import CONF_DMX_LIGHTS, DOMAIN, LIGHT_TYPE_CHANNEL_COUNT, LOGGER
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
-
-LIGHT_TYPE_CHANNEL_COUNT: dict[str, int] = {"dimmer": 1, "rgb": 3, "rgbw": 4}
 
 # Labels for the DMX submenu's dynamic per-light rows. These can't live
 # in translations/<lang>.json because hassfest rejects custom top-level
