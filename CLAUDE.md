@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Home Assistant **custom integration** (HACS-distributed) for the [ProCon.IP pool controller](https://www.pooldigital.de). The integration code lives in `custom_components/proconip_pool_controller/` and follows the [@ludeeus/integration_blueprint](https://github.com/ludeeus/integration_blueprint) pattern.
 
-All HTTP/CSV parsing and relay/dosage commands are delegated to the **`proconip` PyPI package** (declared in `manifest.json` requirements as `proconip>=1.3.0`). When a question is about *what data exists* or *how a call works*, the answer is in that library, not here:
+All HTTP/CSV parsing and relay/dosage commands are delegated to the **`proconip` PyPI package** (declared in `manifest.json` requirements as `proconip>=2.1.0`). When a question is about *what data exists* or *how a call works*, the answer is in that library, not here:
 
 - Source: https://github.com/ylabonte/proconip-pypi
 - Docs: https://ylabonte.github.io/proconip-pypi/
