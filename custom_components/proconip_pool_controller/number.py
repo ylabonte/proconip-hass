@@ -48,6 +48,7 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
     _attr_native_min_value = 5
     _attr_native_step = 1
     _attr_native_unit_of_measurement = "seconds"
+    _attr_translation_key = "dosage_relay"
     _countdown_value: int = 0
 
     def __init__(
@@ -60,7 +61,10 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
         super().__init__(coordinator=coordinator)
         self._relay_id = relay_no - 1
         self._relay = coordinator.data.get_relay(relay_id=self._relay_id)
-        self._attr_name = f"Relay No. {relay_no} Dosage ({self._relay.name})"
+        self._attr_translation_placeholders = {
+            "relay_no": str(relay_no),
+            "device_name": self._relay.name,
+        }
         self._attr_unique_id = f"relay_dosage_{relay_no}_{instance_id}"
 
     @property

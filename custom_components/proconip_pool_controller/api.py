@@ -41,9 +41,7 @@ class ProconipApiClient:
         self._dosage_control_api = DosageControl(
             client_session=self._session, config=self._api_config
         )
-        self._dmx_control_api = DmxControl(
-            client_session=self._session, config=self._api_config
-        )
+        self._dmx_control_api = DmxControl(client_session=self._session, config=self._api_config)
         self._most_recent_data: GetStateData | None = None
 
     async def async_get_data(

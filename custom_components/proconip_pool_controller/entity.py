@@ -13,6 +13,12 @@ class ProconipPoolControllerEntity(CoordinatorEntity[ProconipPoolControllerDataU
     """ProconipPoolControllerEntity class."""
 
     _attr_attribution = ATTRIBUTION
+    # Modern HA pattern: entity name is composed from the device name plus
+    # the platform/translation_key-driven entity name. Subclasses set
+    # `_attr_translation_key` (and `_attr_translation_placeholders` for
+    # dynamic templates); the labels live in `translations/<lang>.json`
+    # under `entity.<platform>.<key>.name`.
+    _attr_has_entity_name = True
 
     def __init__(self, coordinator: ProconipPoolControllerDataUpdateCoordinator) -> None:
         """Initialize."""

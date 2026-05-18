@@ -34,6 +34,8 @@ async def async_setup_entry(
 class ProconipPoolControllerRelaySelect(ProconipPoolControllerEntity, SelectEntity):
     """ProCon.IP Pool Controller relay select class."""
 
+    _attr_translation_key = "relay_select"
+
     def __init__(
         self,
         coordinator: ProconipPoolControllerDataUpdateCoordinator,
@@ -49,7 +51,10 @@ class ProconipPoolControllerRelaySelect(ProconipPoolControllerEntity, SelectEnti
         self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
             relay_id=self._relay_id
         )
-        self._attr_name = f"Relay No. {relay_no}: {self._relay.name}"
+        self._attr_translation_placeholders = {
+            "relay_no": str(relay_no),
+            "device_name": self._relay.name,
+        }
         self._attr_options = (
             ["auto", "off"]
             if self.coordinator.is_active_dosage_relay(relay_id=self._relay_id)

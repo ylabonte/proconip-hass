@@ -28,9 +28,7 @@ async def async_setup_entry(
     async_add_devices: AddEntitiesCallback,
 ) -> None:
     """Set up the light platform."""
-    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
-        entry.entry_id
-    ]
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     lights_config = entry.options.get(CONF_DMX_LIGHTS, [])
     entities: list[ProconipPoolControllerEntity] = []
     for light in lights_config:
@@ -66,6 +64,7 @@ class ProconipDmxLightEntityBase(ProconipPoolControllerEntity, LightEntity):
     """Shared base for DMX light entities."""
 
     _channel_count: int = 1
+    _attr_translation_key = "dmx_light"
 
     def __init__(
         self,
@@ -78,7 +77,7 @@ class ProconipDmxLightEntityBase(ProconipPoolControllerEntity, LightEntity):
         super().__init__(coordinator=coordinator)
         self._slug = slug
         self._start_channel = start_channel
-        self._attr_name = f"DMX {name}"
+        self._attr_translation_placeholders = {"device_name": name}
         self._attr_unique_id = f"dmx_light_{slug}_{instance_id}"
 
     @property
@@ -92,10 +91,7 @@ class ProconipDmxLightEntityBase(ProconipPoolControllerEntity, LightEntity):
         if shadow is None:
             return [0] * self._channel_count
         start_idx = self._start_channel - 1
-        return [
-            int(shadow[start_idx + i].value)
-            for i in range(self._channel_count)
-        ]
+        return [int(shadow[start_idx + i].value) for i in range(self._channel_count)]
 
     def _write_channels(self, values: list[int]) -> None:
         shadow = self.coordinator.dmx_shadow

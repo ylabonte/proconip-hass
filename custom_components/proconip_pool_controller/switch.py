@@ -42,6 +42,7 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
     """ProCon.IP Pool Controller relay switch class."""
 
     _attr_device_class = SwitchDeviceClass.SWITCH
+    _attr_translation_key = "relay"
 
     def __init__(
         self,
@@ -58,7 +59,10 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
         self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
             relay_id=self._relay_id
         )
-        self._attr_name = f"Relay No. {relay_no} ({self._relay.name})"
+        self._attr_translation_placeholders = {
+            "relay_no": str(relay_no),
+            "device_name": self._relay.name,
+        }
         self._attr_unique_id = f"relay_{relay_no}_{instance_id}"
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -81,6 +85,7 @@ class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity
     """Proconip auto-mode switch class."""
 
     _attr_device_class = SwitchDeviceClass.SWITCH
+    _attr_translation_key = "relay_auto_mode"
 
     def __init__(
         self,
@@ -95,7 +100,10 @@ class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity
         self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
             relay_id=self._relay_id
         )
-        self._attr_name = f"Relay No. {relay_no} ({self._relay.name}) Auto-Mode"
+        self._attr_translation_placeholders = {
+            "relay_no": str(relay_no),
+            "device_name": self._relay.name,
+        }
         self._attr_unique_id = f"relay_{relay_no}_auto_mode_{instance_id}"
 
     async def async_turn_on(self, **kwargs: Any) -> None:

@@ -61,5 +61,97 @@
             "overlap": "Diese Kanäle überschneiden sich mit einem bereits konfigurierten Licht.",
             "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits."
         }
+    },
+    "entity": {
+        "binary_sensor": {
+            "chlorine_dosage_enabled": {
+                "name": "Chlor-Dosierung aktiviert"
+            },
+            "electrolysis_enabled": {
+                "name": "Elektrolyse aktiviert"
+            },
+            "ph_minus_dosage_enabled": {
+                "name": "pH-Minus-Dosierung aktiviert"
+            },
+            "ph_plus_dosage_enabled": {
+                "name": "pH-Plus-Dosierung aktiviert"
+            },
+            "tcpip_boost_enabled": {
+                "name": "TCP/IP-Boost aktiviert"
+            },
+            "sd_card_enabled": {
+                "name": "SD-Karte aktiviert"
+            },
+            "dmx_enabled": {
+                "name": "DMX aktiviert"
+            },
+            "avatar_enabled": {
+                "name": "Avatar aktiviert"
+            },
+            "relay_extension_enabled": {
+                "name": "Relais-Erweiterung aktiviert"
+            },
+            "high_bus_load_enabled": {
+                "name": "Hohe Buslast aktiviert"
+            },
+            "flow_sensor_enabled": {
+                "name": "Durchflusssensor aktiviert"
+            },
+            "repeated_mails_enabled": {
+                "name": "Wiederholte E-Mails aktiviert"
+            },
+            "dmx_extension_enabled": {
+                "name": "DMX-Erweiterung aktiviert"
+            }
+        },
+        "sensor": {
+            "redox": {
+                "name": "Redox-Sensor"
+            },
+            "ph": {
+                "name": "pH-Sensor"
+            },
+            "temperature": {
+                "name": "Temperatur Nr. {sensor_no}: {device_name}"
+            },
+            "analog": {
+                "name": "Analog Nr. {sensor_no}: {device_name}"
+            },
+            "digital_input": {
+                "name": "Digitaler Eingang Nr. {sensor_no}: {device_name}"
+            },
+            "canister": {
+                "name": "Kanister {device_name}"
+            },
+            "canister_consumption": {
+                "name": "Kanister-Verbrauch {device_name}"
+            },
+            "relay_state": {
+                "name": "Relais Nr. {relay_no} ({device_name}) Zustand"
+            }
+        },
+        "switch": {
+            "relay": {
+                "name": "Relais Nr. {relay_no} ({device_name})"
+            },
+            "relay_auto_mode": {
+                "name": "Relais Nr. {relay_no} ({device_name}) Auto-Modus"
+            }
+        },
+        "select": {
+            "relay_select": {
+                "name": "Relais Nr. {relay_no}: {device_name}"
+            }
+        },
+        "number": {
+            "dosage_relay": {
+                "name": "Relais Nr. {relay_no} Dosierung ({device_name})"
+            }
+        },
+        "light": {
+            "dmx_light": {
+                "name": "DMX {device_name}"
+            }
+        }
     }
 }

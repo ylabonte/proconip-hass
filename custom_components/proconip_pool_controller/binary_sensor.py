@@ -60,7 +60,7 @@ async def async_setup_entry(
 class ProconipChlorineDosageEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_chlorine_dosage_enabled()`."""
 
-    _attr_name = "Chlorine Dosage enabled"
+    _attr_translation_key = "chlorine_dosage_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -78,7 +78,7 @@ class ProconipChlorineDosageEnabledBinarySensor(ProconipPoolControllerEntity, Bi
 class ProconipElectrolysisEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_electrolysis_enabled()`."""
 
-    _attr_name = "Electrolysis enabled"
+    _attr_translation_key = "electrolysis_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -96,7 +96,7 @@ class ProconipElectrolysisEnabledBinarySensor(ProconipPoolControllerEntity, Bina
 class ProconipPhMinusDosageEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_ph_minus_dosage_enabled()`."""
 
-    _attr_name = "pH Minus Dosage enabled"
+    _attr_translation_key = "ph_minus_dosage_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -114,7 +114,7 @@ class ProconipPhMinusDosageEnabledBinarySensor(ProconipPoolControllerEntity, Bin
 class ProconipPhPlusDosageEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_ph_plus_dosage_enabled()`."""
 
-    _attr_name = "pH Plus Dosage enabled"
+    _attr_translation_key = "ph_plus_dosage_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -132,7 +132,7 @@ class ProconipPhPlusDosageEnabledBinarySensor(ProconipPoolControllerEntity, Bina
 class ProconipTcpIpBoostEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_tcpip_boost_enabled()`."""
 
-    _attr_name = "TCP/IP Boost enabled"
+    _attr_translation_key = "tcpip_boost_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -150,7 +150,7 @@ class ProconipTcpIpBoostEnabledBinarySensor(ProconipPoolControllerEntity, Binary
 class ProconipSdCardEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_sd_card_enabled()`."""
 
-    _attr_name = "SD Card enabled"
+    _attr_translation_key = "sd_card_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -168,7 +168,7 @@ class ProconipSdCardEnabledBinarySensor(ProconipPoolControllerEntity, BinarySens
 class ProconipDmxEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_dmx_enabled()`."""
 
-    _attr_name = "DMX enabled"
+    _attr_translation_key = "dmx_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -186,7 +186,7 @@ class ProconipDmxEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorE
 class ProconipAvatarEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_avatar_enabled()`."""
 
-    _attr_name = "Avatar enabled"
+    _attr_translation_key = "avatar_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -204,7 +204,7 @@ class ProconipAvatarEnabledBinarySensor(ProconipPoolControllerEntity, BinarySens
 class ProconipRelayExtensionEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_relay_extension_enabled()`."""
 
-    _attr_name = "Relay Extension enabled"
+    _attr_translation_key = "relay_extension_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -222,7 +222,7 @@ class ProconipRelayExtensionEnabledBinarySensor(ProconipPoolControllerEntity, Bi
 class ProconipHighBusLoadEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_high_bus_load_enabled()`."""
 
-    _attr_name = "High Bus Load enabled"
+    _attr_translation_key = "high_bus_load_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -240,7 +240,7 @@ class ProconipHighBusLoadEnabledBinarySensor(ProconipPoolControllerEntity, Binar
 class ProconipFlowSensorEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_flow_sensor_enabled()`."""
 
-    _attr_name = "Flow Sensor enabled"
+    _attr_translation_key = "flow_sensor_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -258,7 +258,7 @@ class ProconipFlowSensorEnabledBinarySensor(ProconipPoolControllerEntity, Binary
 class ProconipRepeatedMailEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_repeated_mails_enabled()`."""
 
-    _attr_name = "Repeated Mails enabled"
+    _attr_translation_key = "repeated_mails_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
@@ -276,7 +276,7 @@ class ProconipRepeatedMailEnabledBinarySensor(ProconipPoolControllerEntity, Bina
 class ProconipDmxExtensionEnabledBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
     """ProCon.IP binary_sensor class for `GetStateData.is_dmx_extension_enabled()`."""
 
-    _attr_name = "DMX Extension enabled"
+    _attr_translation_key = "dmx_extension_enabled"
     _attr_icon = "mdi:check-circle"
 
     def __init__(
