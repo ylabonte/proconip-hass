@@ -17,7 +17,7 @@ from homeassistant.const import (
 from homeassistant.core import (
     callback,
 )
-from homeassistant.helpers import selector
+from homeassistant.helpers import selector, translation
 from proconip import (
     BadCredentialsException,
     BadStatusCodeException,
@@ -36,6 +36,20 @@ def _slugify_name(name: str) -> str:
     return slug or "light"
 
 
+def _format_light(template: str, light: dict) -> str:
+    """Apply ``template`` to a light's `{name}`, `{type}`, `{channel}` placeholders.
+
+    Used to build the inline labels for the DMX submenu's per-light rows.
+    The template comes from ``options.dmx_menu.*_template`` in the active
+    language's translation file; this function only handles substitution.
+    """
+    return template.format(
+        name=light["name"],
+        type=light["type"].upper(),
+        channel=light["start_channel"],
+    )
+
+
 def _validate_no_overlap(
     lights: list[dict],
     new_start: int,
@@ -48,12 +62,51 @@ def _validate_no_overlap(
         if skip_slug is not None and light["slug"] == skip_slug:
             continue
         existing_count = LIGHT_TYPE_CHANNEL_COUNT[light["type"]]
-        existing_range = set(
-            range(light["start_channel"], light["start_channel"] + existing_count)
-        )
+        existing_range = set(range(light["start_channel"], light["start_channel"] + existing_count))
         if existing_range & new_range:
             return False
     return True
+
+
+def _validate_new_dmx_light(
+    *,
+    existing_lights: list[dict],
+    name: str,
+    light_type: str,
+    start_channel: int,
+    edit_slug: str | None = None,
+) -> tuple[dict | None, dict[str, str]]:
+    """Validate inputs for adding (or editing) a DMX light.
+
+    Returns ``(light_dict, errors)``. When ``errors`` is non-empty,
+    ``light_dict`` is ``None``. Shared between ConfigFlow's initial-setup
+    add step and OptionsFlow's `_show_dmx_light_form` so the validation
+    rules can't drift.
+    """
+    errors: dict[str, str] = {}
+    count = LIGHT_TYPE_CHANNEL_COUNT[light_type]
+
+    if start_channel < 1 or start_channel + count - 1 > 16:
+        errors["start_channel"] = "out_of_range"
+    elif not _validate_no_overlap(existing_lights, start_channel, count, skip_slug=edit_slug):
+        errors["start_channel"] = "overlap"
+
+    slug = edit_slug or _slugify_name(name)
+    if edit_slug is None and any(light["slug"] == slug for light in existing_lights):
+        errors["name"] = "duplicate"
+
+    if errors:
+        return None, errors
+
+    return (
+        {
+            "slug": slug,
+            "name": name,
+            "type": light_type,
+            "start_channel": start_channel,
+        },
+        {},
+    )
 
 
 class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -61,6 +114,15 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
 
     VERSION = 1
     MINOR_VERSION = 2
+
+    # In-flight state for the initial setup flow. Both attrs are
+    # declared at class level (with immutable `None` defaults) so mypy
+    # doesn't infer the type from the first assignment in a step
+    # method. They're populated in async_step_user once credentials
+    # validate, then consumed by the setup_menu / setup_add_dmx_light /
+    # setup_finish chain.
+    _initial_data: dict[str, Any] | None = None
+    _initial_dmx_lights: list[dict[str, Any]] | None = None
 
     async def async_step_user(
         self,
@@ -83,19 +145,30 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
                 LOGGER.error(exception)
                 _errors["base"] = "connection"
             except ProconipApiException as exception:
+                # Base class — also wraps aiohttp connection failures
+                # (the lib re-raises ClientConnectorError as
+                # ProconipApiException). Treat as a connection problem;
+                # users see "Unable to connect to the server."
+                LOGGER.error(exception)
+                _errors["base"] = "connection"
+            except Exception as exception:  # noqa: BLE001
+                # Genuinely unexpected — keep "unknown" as the catch-all
+                # but log a full traceback so we can diagnose later.
                 LOGGER.exception(exception)
                 _errors["base"] = "unknown"
             else:
-                return self.async_create_entry(
-                    title=user_input[CONF_NAME],
-                    data={CONF_NAME: user_input[CONF_NAME]},
-                    options={
-                        CONF_URL: user_input[CONF_URL],
-                        CONF_USERNAME: user_input[CONF_USERNAME],
-                        CONF_PASSWORD: user_input[CONF_PASSWORD],
-                        CONF_SCAN_INTERVAL: user_input[CONF_SCAN_INTERVAL],
-                    },
-                )
+                # Credentials are good. Stash them and any in-flight DMX
+                # list, then route to the optional setup menu where the
+                # user can add DMX lights before the entry is created.
+                self._initial_data = {
+                    CONF_NAME: user_input[CONF_NAME],
+                    CONF_URL: user_input[CONF_URL],
+                    CONF_USERNAME: user_input[CONF_USERNAME],
+                    CONF_PASSWORD: user_input[CONF_PASSWORD],
+                    CONF_SCAN_INTERVAL: user_input[CONF_SCAN_INTERVAL],
+                }
+                self._initial_dmx_lights = []
+                return await self.async_step_setup_menu()
 
         return self.async_show_form(
             step_id="user",
@@ -139,6 +212,86 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
             errors=_errors,
         )
 
+    async def async_step_setup_menu(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Optional setup menu shown after credentials validate.
+
+        Two entries: "Add a DMX light" routes to the add form;
+        "Finish setup" creates the config entry with whatever's been
+        accumulated. The description carries the live light count via
+        the ``{count}`` placeholder.
+        """
+        lights = self._initial_dmx_lights or []
+        return self.async_show_menu(
+            step_id="setup_menu",
+            menu_options=["setup_add_dmx_light", "setup_finish"],
+            description_placeholders={"count": str(len(lights))},
+        )
+
+    async def async_step_setup_add_dmx_light(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Add a single DMX light during initial setup.
+
+        Only add (no edit/remove) — the user is creating the entry; if
+        they make a mistake they can either restart the flow or fix it
+        via Options after the entry is created.
+        """
+        lights = self._initial_dmx_lights if self._initial_dmx_lights is not None else []
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            new_light, errors = _validate_new_dmx_light(
+                existing_lights=lights,
+                name=user_input["name"],
+                light_type=user_input["type"],
+                start_channel=int(user_input["start_channel"]),
+            )
+            if new_light is not None:
+                lights.append(new_light)
+                self._initial_dmx_lights = lights
+                return await self.async_step_setup_menu()
+
+        defaults = (
+            user_input
+            if errors and user_input is not None
+            else {"name": "", "type": "rgbw", "start_channel": 1}
+        )
+        return self.async_show_form(
+            step_id="setup_add_dmx_light",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("name", default=defaults["name"]): str,
+                    vol.Required("type", default=defaults["type"]): vol.In(
+                        list(LIGHT_TYPE_CHANNEL_COUNT.keys())
+                    ),
+                    vol.Required("start_channel", default=defaults["start_channel"]): vol.All(
+                        int, vol.Range(min=1, max=16)
+                    ),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_setup_finish(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Create the config entry with credentials + any DMX lights added."""
+        assert self._initial_data is not None  # set in async_step_user
+        options: dict[str, Any] = {
+            CONF_URL: self._initial_data[CONF_URL],
+            CONF_USERNAME: self._initial_data[CONF_USERNAME],
+            CONF_PASSWORD: self._initial_data[CONF_PASSWORD],
+            CONF_SCAN_INTERVAL: self._initial_data[CONF_SCAN_INTERVAL],
+        }
+        if self._initial_dmx_lights:
+            options[CONF_DMX_LIGHTS] = self._initial_dmx_lights
+        return self.async_create_entry(
+            title=self._initial_data[CONF_NAME],
+            data={CONF_NAME: self._initial_data[CONF_NAME]},
+            options=options,
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(
@@ -154,10 +307,36 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
     VERSION = 1
     MINOR_VERSION = 2
 
+    # Slug stashed by the remove-confirm step so the static
+    # `async_step_dmx_light_remove_perform` knows which light to drop.
+    # Declared at class level so mypy doesn't infer the type from the
+    # first assignment (which sets it back to None).
+    _pending_remove_slug: str | None = None
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
-        """Handle device options."""
+        """Entry point: show the top-level options menu directly.
+
+        Credentials are already validated at entry creation; users only
+        walk through the connection-settings form when they explicitly
+        pick it. Mirrors the initial-setup flow's
+        credentials → menu → pick UX.
+        """
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["connection", "dmx_lights_menu", "save_and_finish"],
+        )
+
+    async def async_step_connection(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Update connection settings (URL / credentials / scan interval).
+
+        Reached from the top-level menu (`async_step_init`). On
+        successful credential validation, merges the new values into
+        ``self._merged_options`` and bounces back to the menu.
+        """
         connection_tester = ProconipConnectionTester(self.hass)
         _errors: dict[str, str] = {}
         if user_input is not None:
@@ -174,17 +353,26 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
                 LOGGER.error(exception)
                 _errors["base"] = "connection"
             except ProconipApiException as exception:
+                # Base class — also wraps aiohttp connection failures
+                # (the lib re-raises ClientConnectorError as
+                # ProconipApiException). Treat as a connection problem;
+                # users see "Unable to connect to the server."
+                LOGGER.error(exception)
+                _errors["base"] = "connection"
+            except Exception as exception:  # noqa: BLE001
+                # Genuinely unexpected — keep "unknown" as the catch-all
+                # but log a full traceback so we can diagnose later.
                 LOGGER.exception(exception)
                 _errors["base"] = "unknown"
             else:
                 base = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
                 new_options = {**base, **user_input}
                 self._merged_options = new_options
-                return await self.async_step_menu()
+                return await self.async_step_init()
 
         current = self.config_entry.options
         return self.async_show_form(
-            step_id="init",
+            step_id="connection",
             data_schema=vol.Schema(
                 {
                     vol.Required(
@@ -228,39 +416,88 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
             errors=_errors,
         )
 
-    async def async_step_menu(
-        self, user_input: dict[str, Any] | None = None
-    ) -> config_entries.ConfigFlowResult:
-        """Show the top-level integration management menu."""
-        return self.async_show_menu(
-            step_id="menu",
-            menu_options=["init", "dmx_lights_menu", "save_and_finish"],
-        )
-
     async def async_step_save_and_finish(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Save all accumulated options and finish the flow."""
-        options = getattr(self, "_merged_options", None) or dict(
-            self.config_entry.options
-        )
+        options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
         return self.async_create_entry(data=options)
+
+    async def _dmx_menu_strings(self) -> dict[str, str]:
+        """Return the active language's `options.dmx_menu.*` translations.
+
+        We use the dict-of-dicts ``menu_options`` variant for the DMX
+        submenu so that the per-light rows can carry user-chosen slugs in
+        their step_ids — but that variant bypasses HA's automatic label
+        translation. So we look up the labels ourselves via
+        ``async_get_translations`` and feed them back as inline labels.
+        Templates with placeholders like ``{name}`` are formatted by
+        ``_format_light``.
+        """
+        all_translations = await translation.async_get_translations(
+            self.hass, self.hass.config.language, "options", {DOMAIN}
+        )
+        prefix = f"component.{DOMAIN}.options.dmx_menu."
+        return {
+            key[len(prefix) :]: value
+            for key, value in all_translations.items()
+            if key.startswith(prefix)
+        }
 
     async def async_step_dmx_lights_menu(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Show the DMX lights management menu."""
-        options = getattr(self, "_merged_options", None) or dict(
-            self.config_entry.options
-        )
+        t = await self._dmx_menu_strings()
+        options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
         lights: list[dict] = list(options.get(CONF_DMX_LIGHTS, []))
-        menu: list[str] = ["dmx_light_add"]
+        menu: dict[str, str] = {"dmx_light_add": t.get("add_light", "Add light")}
+        edit_template = t.get("edit_light_template", 'Edit "{name}" ({type} · ch {channel})')
         for light in lights:
-            menu.append(f"dmx_light_edit_{light['slug']}")
-        for light in lights:
-            menu.append(f"dmx_light_remove_{light['slug']}")
-        menu.append("menu")
+            menu[f"dmx_light_edit_{light['slug']}"] = _format_light(edit_template, light)
+        if lights:
+            menu["dmx_lights_remove_menu"] = t.get("remove_light", "Remove a light…")
+        # "Back" returns to the top-level options menu (now async_step_init).
+        menu["init"] = t.get("back", "Back")
         return self.async_show_menu(step_id="dmx_lights_menu", menu_options=menu)
+
+    async def async_step_dmx_lights_remove_menu(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """List existing lights and let the user pick one to delete.
+
+        Tapping a light routes to ``dmx_light_remove_confirm_<slug>``
+        (resolved dynamically by ``__getattr__``), which shows a
+        Remove/Cancel menu before any state mutation.
+        """
+        t = await self._dmx_menu_strings()
+        options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
+        lights: list[dict] = list(options.get(CONF_DMX_LIGHTS, []))
+        menu: dict[str, str] = {}
+        list_template = t.get("list_light_template", '"{name}" ({type} · ch {channel})')
+        for light in lights:
+            menu[f"dmx_light_remove_confirm_{light['slug']}"] = _format_light(list_template, light)
+        menu["dmx_lights_menu"] = t.get("back", "Back")
+        return self.async_show_menu(step_id="dmx_lights_remove_menu", menu_options=menu)
+
+    async def async_step_dmx_light_remove_perform(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Delete the light tagged by `_pending_remove_slug` and return to the lights menu.
+
+        The slug is stashed on `self` by the confirm step so this static
+        handler doesn't need its own dynamic-dispatch entry in
+        ``__getattr__``.
+        """
+        slug = getattr(self, "_pending_remove_slug", None)
+        if slug is not None:
+            options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
+            options[CONF_DMX_LIGHTS] = [
+                light for light in options.get(CONF_DMX_LIGHTS, []) if light["slug"] != slug
+            ]
+            self._merged_options = options
+            self._pending_remove_slug = None
+        return await self.async_step_dmx_lights_menu()
 
     async def async_step_dmx_light_add(
         self, user_input: dict[str, Any] | None = None
@@ -274,41 +511,23 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
         edit_slug: str | None,
     ) -> config_entries.ConfigFlowResult:
         """Show the form for adding or editing a DMX light."""
-        options = getattr(self, "_merged_options", None) or dict(
-            self.config_entry.options
-        )
+        options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
         lights: list[dict] = list(options.get(CONF_DMX_LIGHTS, []))
-        existing = next(
-            (light for light in lights if light["slug"] == edit_slug), None
-        )
+        existing = next((light for light in lights if light["slug"] == edit_slug), None)
 
         errors: dict[str, str] = {}
         if user_input is not None:
-            light_type = user_input["type"]
-            count = LIGHT_TYPE_CHANNEL_COUNT[light_type]
-            start = int(user_input["start_channel"])
-
-            if start < 1 or start + count - 1 > 16:
-                errors["start_channel"] = "out_of_range"
-            elif not _validate_no_overlap(lights, start, count, skip_slug=edit_slug):
-                errors["start_channel"] = "overlap"
-
-            slug = existing["slug"] if existing else _slugify_name(user_input["name"])
-            if existing is None:
-                if any(light["slug"] == slug for light in lights):
-                    errors["name"] = "duplicate"
-
-            if not errors:
-                new_light = {
-                    "slug": slug,
-                    "name": user_input["name"],
-                    "type": light_type,
-                    "start_channel": start,
-                }
+            new_light, errors = _validate_new_dmx_light(
+                existing_lights=lights,
+                name=user_input["name"],
+                light_type=user_input["type"],
+                start_channel=int(user_input["start_channel"]),
+                edit_slug=edit_slug,
+            )
+            if new_light is not None:
                 if existing is not None:
                     lights = [
-                        new_light if light["slug"] == edit_slug else light
-                        for light in lights
+                        new_light if light["slug"] == edit_slug else light for light in lights
                     ]
                 else:
                     lights.append(new_light)
@@ -330,9 +549,9 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Required("type", default=defaults["type"]): vol.In(
                         list(LIGHT_TYPE_CHANNEL_COUNT.keys())
                     ),
-                    vol.Required(
-                        "start_channel", default=defaults["start_channel"]
-                    ): vol.All(int, vol.Range(min=1, max=16)),
+                    vol.Required("start_channel", default=defaults["start_channel"]): vol.All(
+                        int, vol.Range(min=1, max=16)
+                    ),
                 }
             ),
             errors=errors,
@@ -342,33 +561,56 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
         """Placeholder — edit/remove are dispatched dynamically via __getattr__."""
-        raise NotImplementedError(
-            "Edit/Remove are dispatched dynamically — see __getattr__"
-        )
+        raise NotImplementedError("Edit/Remove are dispatched dynamically — see __getattr__")
 
     def __getattr__(self, item: str) -> Any:
-        """Dynamically resolve async_step_dmx_light_edit_<slug> and async_step_dmx_light_remove_<slug>."""
-        if item.startswith("async_step_dmx_light_edit_"):
-            slug = item[len("async_step_dmx_light_edit_"):]
+        """Dynamically resolve per-slug step methods.
 
-            async def _edit_step(user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        Two prefixes are routed:
+
+        - ``async_step_dmx_light_edit_<slug>`` — opens the edit form for
+          the given light (closure captures ``slug``).
+        - ``async_step_dmx_light_remove_confirm_<slug>`` — stashes the
+          slug on ``self._pending_remove_slug`` and shows a Remove/Cancel
+          menu. The actual deletion is done by the static
+          ``async_step_dmx_light_remove_perform`` step (no per-slug
+          dispatch needed for the perform side).
+        """
+        if item.startswith("async_step_dmx_light_edit_"):
+            slug = item[len("async_step_dmx_light_edit_") :]
+
+            async def _edit_step(
+                user_input: dict[str, Any] | None = None,
+            ) -> config_entries.ConfigFlowResult:
                 return await self._show_dmx_light_form(user_input, edit_slug=slug)
 
             return _edit_step
-        if item.startswith("async_step_dmx_light_remove_"):
-            slug = item[len("async_step_dmx_light_remove_"):]
+        if item.startswith("async_step_dmx_light_remove_confirm_"):
+            slug = item[len("async_step_dmx_light_remove_confirm_") :]
 
-            async def _remove_step(user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
-                options = getattr(self, "_merged_options", None) or dict(
-                    self.config_entry.options
+            async def _confirm_step(
+                user_input: dict[str, Any] | None = None,
+            ) -> config_entries.ConfigFlowResult:
+                self._pending_remove_slug = slug
+                options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
+                light = next(
+                    (
+                        candidate
+                        for candidate in options.get(CONF_DMX_LIGHTS, [])
+                        if candidate["slug"] == slug
+                    ),
+                    None,
                 )
-                options[CONF_DMX_LIGHTS] = [
-                    light
-                    for light in options.get(CONF_DMX_LIGHTS, [])
-                    if light["slug"] != slug
-                ]
-                self._merged_options = options
-                return await self.async_step_dmx_lights_menu()
+                name = light["name"] if light else slug
+                t = await self._dmx_menu_strings()
+                remove_template = t.get("remove_light_template", 'Remove "{name}"')
+                return self.async_show_menu(
+                    step_id=f"dmx_light_remove_confirm_{slug}",
+                    menu_options={
+                        "dmx_light_remove_perform": remove_template.format(name=name),
+                        "dmx_lights_remove_menu": t.get("cancel", "Cancel"),
+                    },
+                )
 
-            return _remove_step
+            return _confirm_step
         raise AttributeError(item)

@@ -18,7 +18,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.proconip_pool_controller.config_flow import (
     ProconipPoolControllerOptionsFlowHandler,
 )
-from custom_components.proconip_pool_controller.const import DOMAIN
+from custom_components.proconip_pool_controller.const import CONF_DMX_LIGHTS, DOMAIN
 
 USER_INPUT = {
     CONF_NAME: "Test Pool",
@@ -33,6 +33,7 @@ async def test_user_flow_happy_path(
     hass: HomeAssistant,
     mock_state_endpoint: aioresponses,
 ) -> None:
+    """Credentials → setup_menu → setup_finish → CREATE_ENTRY (no DMX lights)."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -42,15 +43,99 @@ async def test_user_flow_happy_path(
     result2 = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input=USER_INPUT
     )
-    assert result2["type"] is FlowResultType.CREATE_ENTRY
-    assert result2["title"] == "Test Pool"
-    assert result2["data"] == {CONF_NAME: "Test Pool"}
-    assert result2["options"] == {
+    # After credentials the flow now lands on the optional setup menu.
+    assert result2["type"] is FlowResultType.MENU
+    assert result2["step_id"] == "setup_menu"
+    assert "setup_add_dmx_light" in result2["menu_options"]
+    assert "setup_finish" in result2["menu_options"]
+
+    # Skip DMX, finish setup.
+    result3 = await hass.config_entries.flow.async_configure(
+        result2["flow_id"], user_input={"next_step_id": "setup_finish"}
+    )
+    assert result3["type"] is FlowResultType.CREATE_ENTRY
+    assert result3["title"] == "Test Pool"
+    assert result3["data"] == {CONF_NAME: "Test Pool"}
+    assert result3["options"] == {
         CONF_URL: USER_INPUT[CONF_URL],
         CONF_USERNAME: USER_INPUT[CONF_USERNAME],
         CONF_PASSWORD: USER_INPUT[CONF_PASSWORD],
         CONF_SCAN_INTERVAL: USER_INPUT[CONF_SCAN_INTERVAL],
     }
+    # No DMX lights configured → key omitted from options.
+    assert CONF_DMX_LIGHTS not in result3["options"]
+
+
+async def test_user_flow_with_dmx_light_added(
+    hass: HomeAssistant,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """Credentials → add one DMX light → finish → entry has CONF_DMX_LIGHTS."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result_menu = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input=USER_INPUT
+    )
+    # Open the add-light form.
+    result_form = await hass.config_entries.flow.async_configure(
+        result_menu["flow_id"], user_input={"next_step_id": "setup_add_dmx_light"}
+    )
+    assert result_form["type"] is FlowResultType.FORM
+    assert result_form["step_id"] == "setup_add_dmx_light"
+
+    # Submit a valid light → back at setup_menu, count placeholder = 1.
+    result_after_add = await hass.config_entries.flow.async_configure(
+        result_form["flow_id"],
+        user_input={"name": "Pool main", "type": "rgbw", "start_channel": 1},
+    )
+    assert result_after_add["type"] is FlowResultType.MENU
+    assert result_after_add["step_id"] == "setup_menu"
+    assert result_after_add["description_placeholders"] == {"count": "1"}
+
+    # Finish setup.
+    result_done = await hass.config_entries.flow.async_configure(
+        result_after_add["flow_id"], user_input={"next_step_id": "setup_finish"}
+    )
+    assert result_done["type"] is FlowResultType.CREATE_ENTRY
+    saved_lights = result_done["options"][CONF_DMX_LIGHTS]
+    assert len(saved_lights) == 1
+    assert saved_lights[0]["slug"] == "pool_main"
+    assert saved_lights[0]["name"] == "Pool main"
+    assert saved_lights[0]["type"] == "rgbw"
+    assert saved_lights[0]["start_channel"] == 1
+
+
+async def test_user_flow_initial_dmx_overlap_rejected(
+    hass: HomeAssistant,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """Adding a second light that overlaps the first re-renders the form with an error."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result_menu = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input=USER_INPUT
+    )
+    # Add Pool main RGBW@1 → occupies channels 1-4.
+    result_form = await hass.config_entries.flow.async_configure(
+        result_menu["flow_id"], user_input={"next_step_id": "setup_add_dmx_light"}
+    )
+    result_after = await hass.config_entries.flow.async_configure(
+        result_form["flow_id"],
+        user_input={"name": "Pool main", "type": "rgbw", "start_channel": 1},
+    )
+    assert result_after["type"] is FlowResultType.MENU
+    # Open the add form again, try to add RGB@3 → overlaps channels 3-5.
+    result_form2 = await hass.config_entries.flow.async_configure(
+        result_after["flow_id"], user_input={"next_step_id": "setup_add_dmx_light"}
+    )
+    result_overlap = await hass.config_entries.flow.async_configure(
+        result_form2["flow_id"],
+        user_input={"name": "Conflicting", "type": "rgb", "start_channel": 3},
+    )
+    assert result_overlap["type"] is FlowResultType.FORM
+    assert result_overlap["errors"] == {"start_channel": "overlap"}
 
 
 async def test_user_flow_auth_error(
@@ -104,18 +189,27 @@ async def test_options_flow_no_init_required(
     assert handler is not None
 
 
-async def test_options_flow_shows_init_form(
+async def test_options_flow_opens_menu_directly(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     mock_state_endpoint: aioresponses,
 ) -> None:
-    """Test that options flow shows the init form when entry is loaded."""
+    """Options flow's entry step is the top-level menu, not the connection form.
+
+    Credentials are already validated at entry creation; making users
+    re-submit them just to reach DMX-lights / save-and-finish is friction.
+    """
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
-    assert result["type"] is FlowResultType.FORM
+    assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "init"
+    assert set(result["menu_options"]) == {
+        "connection",
+        "dmx_lights_menu",
+        "save_and_finish",
+    }
 
     # Unload the entry cleanly before test teardown
     assert await hass.config_entries.async_unload(config_entry.entry_id)

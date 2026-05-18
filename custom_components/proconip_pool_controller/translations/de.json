@@ -10,41 +10,16 @@
                     "username": "Benutzername",
                     "password": "Passwort"
                 }
-            }
-        },
-        "error": {
-            "auth": "Benutzername/Passwort ist falsch.",
-            "connection": "Verbindung zum Server nicht möglich.",
-            "unknown": "Unbekannter Fehler aufgetreten."
-        }
-    },
-    "options": {
-        "step": {
-            "init": {
-                "description": "Verbindungseinstellungen aktualisieren.",
-                "data": {
-                    "url": "Controller-Adresse (URL)",
-                    "username": "Benutzername",
-                    "password": "Passwort",
-                    "scan_interval": "Abfrageintervall in Sekunden"
-                }
             },
-            "menu": {
-                "title": "Integration verwalten",
+            "setup_menu": {
+                "title": "Optional: DMX-Lichter",
+                "description": "Bisher konfiguriert: {count}. DMX-Lichter können jetzt oder später über die Integrationsoptionen hinzugefügt werden.",
                 "menu_options": {
-                    "init": "Verbindungseinstellungen",
-                    "dmx_lights_menu": "DMX-Lichter",
-                    "save_and_finish": "Speichern und beenden"
+                    "setup_add_dmx_light": "DMX-Licht hinzufügen",
+                    "setup_finish": "Einrichtung abschließen"
                 }
             },
-            "dmx_lights_menu": {
-                "title": "DMX-Lichter",
-                "menu_options": {
-                    "dmx_light_add": "Licht hinzufügen",
-                    "menu": "Zurück"
-                }
-            },
-            "dmx_light_add": {
+            "setup_add_dmx_light": {
                 "title": "DMX-Licht hinzufügen",
                 "data": {
                     "name": "Name",
@@ -62,96 +37,100 @@
             "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits."
         }
     },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Integration verwalten",
+                "menu_options": {
+                    "connection": "Verbindungseinstellungen",
+                    "dmx_lights_menu": "DMX-Lichter",
+                    "save_and_finish": "Speichern und beenden"
+                }
+            },
+            "connection": {
+                "description": "Verbindungseinstellungen aktualisieren.",
+                "data": {
+                    "url": "Controller-Adresse (URL)",
+                    "username": "Benutzername",
+                    "password": "Passwort",
+                    "scan_interval": "Abfrageintervall in Sekunden"
+                }
+            },
+            "dmx_lights_menu": {
+                "title": "DMX-Lichter",
+                "menu_options": {
+                    "dmx_light_add": "Licht hinzufügen",
+                    "init": "Zurück"
+                }
+            },
+            "dmx_lights_remove_menu": {
+                "title": "Licht entfernen"
+            },
+            "dmx_light_add": {
+                "title": "DMX-Licht hinzufügen",
+                "data": {
+                    "name": "Name",
+                    "type": "Lichttyp",
+                    "start_channel": "Startkanal (1-16)"
+                }
+            }
+        },
+        "error": {
+            "auth": "Benutzername/Passwort ist falsch.",
+            "connection": "Verbindung zum Server nicht möglich.",
+            "unknown": "Unbekannter Fehler aufgetreten.",
+            "out_of_range": "Kanalbereich überschreitet 16. Wähle einen kleineren Startkanal.",
+            "overlap": "Diese Kanäle überschneiden sich mit einem bereits konfigurierten Licht.",
+            "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits."
+        },
+        "dmx_menu": {
+            "add_light": "Licht hinzufügen",
+            "remove_light": "Licht entfernen…",
+            "back": "Zurück",
+            "cancel": "Abbrechen",
+            "edit_light_template": "„{name}“ bearbeiten ({type} · Kanal {channel})",
+            "list_light_template": "„{name}“ ({type} · Kanal {channel})",
+            "remove_light_template": "„{name}“ entfernen"
+        }
+    },
     "entity": {
         "binary_sensor": {
-            "chlorine_dosage_enabled": {
-                "name": "Chlor-Dosierung aktiviert"
-            },
-            "electrolysis_enabled": {
-                "name": "Elektrolyse aktiviert"
-            },
-            "ph_minus_dosage_enabled": {
-                "name": "pH-Minus-Dosierung aktiviert"
-            },
-            "ph_plus_dosage_enabled": {
-                "name": "pH-Plus-Dosierung aktiviert"
-            },
-            "tcpip_boost_enabled": {
-                "name": "TCP/IP-Boost aktiviert"
-            },
-            "sd_card_enabled": {
-                "name": "SD-Karte aktiviert"
-            },
-            "dmx_enabled": {
-                "name": "DMX aktiviert"
-            },
-            "avatar_enabled": {
-                "name": "Avatar aktiviert"
-            },
-            "relay_extension_enabled": {
-                "name": "Relais-Erweiterung aktiviert"
-            },
-            "high_bus_load_enabled": {
-                "name": "Hohe Buslast aktiviert"
-            },
-            "flow_sensor_enabled": {
-                "name": "Durchflusssensor aktiviert"
-            },
-            "repeated_mails_enabled": {
-                "name": "Wiederholte E-Mails aktiviert"
-            },
-            "dmx_extension_enabled": {
-                "name": "DMX-Erweiterung aktiviert"
-            }
+            "chlorine_dosage_enabled": {"name": "Chlor-Dosierung aktiviert"},
+            "electrolysis_enabled": {"name": "Elektrolyse aktiviert"},
+            "ph_minus_dosage_enabled": {"name": "pH-Minus-Dosierung aktiviert"},
+            "ph_plus_dosage_enabled": {"name": "pH-Plus-Dosierung aktiviert"},
+            "tcpip_boost_enabled": {"name": "TCP/IP-Boost aktiviert"},
+            "sd_card_enabled": {"name": "SD-Karte aktiviert"},
+            "dmx_enabled": {"name": "DMX aktiviert"},
+            "avatar_enabled": {"name": "Avatar aktiviert"},
+            "relay_extension_enabled": {"name": "Relais-Erweiterung aktiviert"},
+            "high_bus_load_enabled": {"name": "Hohe Buslast aktiviert"},
+            "flow_sensor_enabled": {"name": "Durchflusssensor aktiviert"},
+            "repeated_mails_enabled": {"name": "Wiederholte E-Mails aktiviert"},
+            "dmx_extension_enabled": {"name": "DMX-Erweiterung aktiviert"}
         },
         "sensor": {
-            "redox": {
-                "name": "Redox-Sensor"
-            },
-            "ph": {
-                "name": "pH-Sensor"
-            },
-            "temperature": {
-                "name": "Temperatur Nr. {sensor_no}: {device_name}"
-            },
-            "analog": {
-                "name": "Analog Nr. {sensor_no}: {device_name}"
-            },
-            "digital_input": {
-                "name": "Digitaler Eingang Nr. {sensor_no}: {device_name}"
-            },
-            "canister": {
-                "name": "Kanister {device_name}"
-            },
-            "canister_consumption": {
-                "name": "Kanister-Verbrauch {device_name}"
-            },
-            "relay_state": {
-                "name": "Relais Nr. {relay_no} ({device_name}) Zustand"
-            }
+            "redox": {"name": "Redox-Sensor"},
+            "ph": {"name": "pH-Sensor"},
+            "temperature": {"name": "Temperatur Nr. {sensor_no}: {device_name}"},
+            "analog": {"name": "Analog Nr. {sensor_no}: {device_name}"},
+            "digital_input": {"name": "Digitaler Eingang Nr. {sensor_no}: {device_name}"},
+            "canister": {"name": "Kanister {device_name}"},
+            "canister_consumption": {"name": "Kanister-Verbrauch {device_name}"},
+            "relay_state": {"name": "Relais Nr. {relay_no} ({device_name}) Zustand"}
         },
         "switch": {
-            "relay": {
-                "name": "Relais Nr. {relay_no} ({device_name})"
-            },
-            "relay_auto_mode": {
-                "name": "Relais Nr. {relay_no} ({device_name}) Auto-Modus"
-            }
+            "relay": {"name": "Relais Nr. {relay_no} ({device_name})"},
+            "relay_auto_mode": {"name": "Relais Nr. {relay_no} ({device_name}) Auto-Modus"}
         },
         "select": {
-            "relay_select": {
-                "name": "Relais Nr. {relay_no}: {device_name}"
-            }
+            "relay_select": {"name": "Relais Nr. {relay_no}: {device_name}"}
         },
         "number": {
-            "dosage_relay": {
-                "name": "Relais Nr. {relay_no} Dosierung ({device_name})"
-            }
+            "dosage_relay": {"name": "Relais Nr. {relay_no} Dosierung ({device_name})"}
         },
         "light": {
-            "dmx_light": {
-                "name": "DMX {device_name}"
-            }
+            "dmx_light": {"name": "DMX {device_name}"}
         }
     }
 }
