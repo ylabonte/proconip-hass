@@ -22,6 +22,7 @@ from proconip import (
     BadCredentialsException,
     BadStatusCodeException,
     ProconipApiException,
+    TimeoutException,
 )
 
 from .api import ProconipConnectionTester
@@ -174,6 +175,12 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
                 LOGGER.warning(exception)
                 _errors["base"] = "auth"
             except BadStatusCodeException as exception:
+                LOGGER.error(exception)
+                _errors["base"] = "connection"
+            except TimeoutException as exception:
+                # Lib raises this distinctly from ProconipApiException when
+                # the controller doesn't answer within the request timeout;
+                # surface as a connection error, not "unknown".
                 LOGGER.error(exception)
                 _errors["base"] = "connection"
             except ProconipApiException as exception:
@@ -413,6 +420,12 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
                 LOGGER.warning(exception)
                 _errors["base"] = "auth"
             except BadStatusCodeException as exception:
+                LOGGER.error(exception)
+                _errors["base"] = "connection"
+            except TimeoutException as exception:
+                # Lib raises this distinctly from ProconipApiException when
+                # the controller doesn't answer within the request timeout;
+                # surface as a connection error, not "unknown".
                 LOGGER.error(exception)
                 _errors["base"] = "connection"
             except ProconipApiException as exception:

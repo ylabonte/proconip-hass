@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from aioresponses import aioresponses
 from homeassistant import config_entries
 from homeassistant.const import (
@@ -188,6 +189,32 @@ async def test_user_flow_connection_error(
         status=500,
         body="Server Error",
         repeat=True,
+    )
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input=USER_INPUT
+    )
+    assert result2["type"] is FlowResultType.FORM
+    assert result2["errors"] == {"base": "connection"}
+
+
+async def test_user_flow_timeout_maps_to_connection_error(
+    hass: HomeAssistant,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A controller timeout should land in the 'connection' bucket, not 'unknown'."""
+    from unittest.mock import AsyncMock
+
+    from proconip import TimeoutException
+
+    from custom_components.proconip_pool_controller import config_flow as cf_module
+
+    monkeypatch.setattr(
+        cf_module.ProconipConnectionTester,
+        "async_test_credentials",
+        AsyncMock(side_effect=TimeoutException("API request timed out")),
     )
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
