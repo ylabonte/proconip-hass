@@ -31,9 +31,9 @@ USER_INPUT = {
 
 async def test_user_flow_happy_path(
     hass: HomeAssistant,
-    mock_state_endpoint: aioresponses,
+    mock_state_endpoint_dmx_on: aioresponses,
 ) -> None:
-    """Credentials → setup_menu → setup_finish → CREATE_ENTRY (no DMX lights)."""
+    """Credentials (DMX-on controller) → setup_menu → setup_finish → CREATE_ENTRY."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -43,7 +43,7 @@ async def test_user_flow_happy_path(
     result2 = await hass.config_entries.flow.async_configure(
         result["flow_id"], user_input=USER_INPUT
     )
-    # After credentials the flow now lands on the optional setup menu.
+    # Controller reports DMX enabled → flow lands on the optional setup menu.
     assert result2["type"] is FlowResultType.MENU
     assert result2["step_id"] == "setup_menu"
     assert "setup_add_dmx_light" in result2["menu_options"]
@@ -66,11 +66,32 @@ async def test_user_flow_happy_path(
     assert CONF_DMX_LIGHTS not in result3["options"]
 
 
-async def test_user_flow_with_dmx_light_added(
+async def test_user_flow_skips_setup_menu_when_dmx_disabled(
     hass: HomeAssistant,
     mock_state_endpoint: aioresponses,
 ) -> None:
-    """Credentials → add one DMX light → finish → entry has CONF_DMX_LIGHTS."""
+    """DMX-off controller: credentials submit creates the entry immediately.
+
+    The default ``get_state.csv`` fixture has SYSINFO[5]=0 → DMX disabled.
+    No reason to show an "Add a DMX light" menu the user can't use.
+    """
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    result2 = await hass.config_entries.flow.async_configure(
+        result["flow_id"], user_input=USER_INPUT
+    )
+    # Goes straight from credentials to CREATE_ENTRY, no setup_menu in between.
+    assert result2["type"] is FlowResultType.CREATE_ENTRY
+    assert result2["title"] == "Test Pool"
+    assert CONF_DMX_LIGHTS not in result2["options"]
+
+
+async def test_user_flow_with_dmx_light_added(
+    hass: HomeAssistant,
+    mock_state_endpoint_dmx_on: aioresponses,
+) -> None:
+    """DMX-on controller → add one DMX light → finish → entry has CONF_DMX_LIGHTS."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
@@ -108,7 +129,7 @@ async def test_user_flow_with_dmx_light_added(
 
 async def test_user_flow_initial_dmx_overlap_rejected(
     hass: HomeAssistant,
-    mock_state_endpoint: aioresponses,
+    mock_state_endpoint_dmx_on: aioresponses,
 ) -> None:
     """Adding a second light that overlaps the first re-renders the form with an error."""
     result = await hass.config_entries.flow.async_init(
@@ -189,16 +210,32 @@ async def test_options_flow_no_init_required(
     assert handler is not None
 
 
-async def test_options_flow_opens_menu_directly(
+async def test_options_flow_hides_dmx_entry_when_dmx_disabled(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     mock_state_endpoint: aioresponses,
 ) -> None:
-    """Options flow's entry step is the top-level menu, not the connection form.
+    """Default fixture has DMX off: top-level menu omits the dmx_lights_menu entry."""
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
 
-    Credentials are already validated at entry creation; making users
-    re-submit them just to reach DMX-lights / save-and-finish is friction.
-    """
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "init"
+    # No "dmx_lights_menu" — controller doesn't support DMX, no existing lights either.
+    assert set(result["menu_options"]) == {"connection", "save_and_finish"}
+
+    # Unload the entry cleanly before test teardown
+    assert await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_options_flow_shows_dmx_entry_when_dmx_enabled(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint_dmx_on: aioresponses,
+) -> None:
+    """DMX-on controller: top-level menu includes the dmx_lights_menu entry."""
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
 

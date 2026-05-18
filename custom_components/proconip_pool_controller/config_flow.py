@@ -26,6 +26,7 @@ from proconip import (
 
 from .api import ProconipConnectionTester
 from .const import CONF_DMX_LIGHTS, DOMAIN, LOGGER
+from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 
 LIGHT_TYPE_CHANNEL_COUNT: dict[str, int] = {"dimmer": 1, "rgb": 3, "rgbw": 4}
 
@@ -115,14 +116,17 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
     VERSION = 1
     MINOR_VERSION = 2
 
-    # In-flight state for the initial setup flow. Both attrs are
-    # declared at class level (with immutable `None` defaults) so mypy
-    # doesn't infer the type from the first assignment in a step
-    # method. They're populated in async_step_user once credentials
-    # validate, then consumed by the setup_menu / setup_add_dmx_light /
-    # setup_finish chain.
+    # In-flight state for the initial setup flow. All three attrs are
+    # declared at class level (with immutable defaults) so mypy doesn't
+    # infer the type from the first assignment in a step method. They're
+    # populated in async_step_user once credentials validate, then
+    # consumed by the setup_menu / setup_add_dmx_light / setup_finish chain.
     _initial_data: dict[str, Any] | None = None
     _initial_dmx_lights: list[dict[str, Any]] | None = None
+    # True iff the controller's GetState response had bit 2 of SYSINFO[5]
+    # set when credentials were validated. Gates whether setup_menu (with
+    # its "Add a DMX light" option) is shown at all.
+    _initial_dmx_enabled: bool = False
 
     async def async_step_user(
         self,
@@ -133,7 +137,7 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
         _errors = {}
         if user_input is not None:
             try:
-                await connection_tester.async_test_credentials(
+                state = await connection_tester.async_test_credentials(
                     url=user_input[CONF_URL],
                     username=user_input[CONF_USERNAME],
                     password=user_input[CONF_PASSWORD],
@@ -158,8 +162,10 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
                 _errors["base"] = "unknown"
             else:
                 # Credentials are good. Stash them and any in-flight DMX
-                # list, then route to the optional setup menu where the
-                # user can add DMX lights before the entry is created.
+                # list. If the controller reports DMX as enabled, route
+                # to the optional setup menu (where the user can add DMX
+                # lights up front). Otherwise skip straight to entry
+                # creation — there's nothing to opt into.
                 self._initial_data = {
                     CONF_NAME: user_input[CONF_NAME],
                     CONF_URL: user_input[CONF_URL],
@@ -168,7 +174,10 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
                     CONF_SCAN_INTERVAL: user_input[CONF_SCAN_INTERVAL],
                 }
                 self._initial_dmx_lights = []
-                return await self.async_step_setup_menu()
+                self._initial_dmx_enabled = state.is_dmx_enabled()
+                if self._initial_dmx_enabled:
+                    return await self.async_step_setup_menu()
+                return await self.async_step_setup_finish()
 
         return self.async_show_form(
             step_id="user",
@@ -313,6 +322,31 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
     # first assignment (which sets it back to None).
     _pending_remove_slug: str | None = None
 
+    def _show_dmx_menu_entry(self) -> bool:
+        """Whether the top-level menu should include the DMX-lights entry.
+
+        True if either:
+
+        - The entry already has configured DMX lights — even if the
+          controller now reports DMX as disabled, the user needs a way
+          to manage/remove these orphans via the UI.
+        - OR the coordinator is healthy AND its last poll reports
+          `is_dmx_enabled()` True.
+
+        Unhealthy coordinator (no recent successful poll) with no
+        existing lights → hide the entry. The user can fix the
+        connection via the Connection settings entry, then re-open.
+        """
+        options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
+        if options.get(CONF_DMX_LIGHTS):
+            return True
+        coordinator: ProconipPoolControllerDataUpdateCoordinator | None = self.hass.data.get(
+            DOMAIN, {}
+        ).get(self.config_entry.entry_id)
+        if coordinator is None or not coordinator.last_update_success:
+            return False
+        return coordinator.data.is_dmx_enabled()
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> config_entries.ConfigFlowResult:
@@ -320,13 +354,14 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
 
         Credentials are already validated at entry creation; users only
         walk through the connection-settings form when they explicitly
-        pick it. Mirrors the initial-setup flow's
-        credentials → menu → pick UX.
+        pick it. The DMX-lights entry is gated on whether the controller
+        actually supports DMX (see `_show_dmx_menu_entry`).
         """
-        return self.async_show_menu(
-            step_id="init",
-            menu_options=["connection", "dmx_lights_menu", "save_and_finish"],
-        )
+        menu_options = ["connection"]
+        if self._show_dmx_menu_entry():
+            menu_options.append("dmx_lights_menu")
+        menu_options.append("save_and_finish")
+        return self.async_show_menu(step_id="init", menu_options=menu_options)
 
     async def async_step_connection(
         self, user_input: dict[str, Any] | None = None

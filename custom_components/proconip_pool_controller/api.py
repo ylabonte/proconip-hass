@@ -139,12 +139,22 @@ class ProconipConnectionTester:
         """Initialize connection tester."""
         self.hass = hass
 
-    async def async_test_credentials(self, url: str, username: str, password: str) -> None:
-        """Validate base url and credentials."""
+    async def async_test_credentials(
+        self, url: str, username: str, password: str
+    ) -> GetStateData:
+        """Validate base url + credentials and return the parsed state.
+
+        The caller can introspect the returned ``GetStateData`` (e.g. for
+        ``is_dmx_enabled()``) to gate flow decisions on what the controller
+        reports — without paying a second HTTP round-trip. Raises the same
+        exceptions ``ProconipApiClient.async_get_data`` raises
+        (``BadCredentialsException``, ``BadStatusCodeException``,
+        ``ProconipApiException``, ``TimeoutException``).
+        """
         client = ProconipApiClient(
             base_url=url,
             username=username,
             password=password,
             hass=self.hass,
         )
-        await client.async_get_data()
+        return await client.async_get_data()

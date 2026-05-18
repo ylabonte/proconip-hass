@@ -41,6 +41,16 @@ def get_state_csv() -> str:
 
 
 @pytest.fixture
+def get_state_dmx_on_csv() -> str:
+    """Variant of ``get_state.csv`` with SYSINFO[5]=4 (DMX enabled bit set).
+
+    Use ``mock_state_endpoint_dmx_on`` when a test needs the controller
+    to report ``is_dmx_enabled()`` as True.
+    """
+    return (FIXTURES_DIR / "get_state_dmx_on.csv").read_text()
+
+
+@pytest.fixture
 def get_dmx_csv() -> str:
     return (FIXTURES_DIR / "get_dmx.csv").read_text()
 
@@ -57,6 +67,18 @@ def mock_state_endpoint(aio_mock: aioresponses, get_state_csv: str) -> aiorespon
         f"{BASE_URL}/GetState.csv",
         status=200,
         body=get_state_csv,
+        repeat=True,
+    )
+    return aio_mock
+
+
+@pytest.fixture
+def mock_state_endpoint_dmx_on(aio_mock: aioresponses, get_state_dmx_on_csv: str) -> aioresponses:
+    """``mock_state_endpoint`` variant that serves a DMX-enabled SYSINFO row."""
+    aio_mock.get(
+        f"{BASE_URL}/GetState.csv",
+        status=200,
+        body=get_state_dmx_on_csv,
         repeat=True,
     )
     return aio_mock
@@ -98,6 +120,25 @@ async def setup_integration(
     config_entry: MockConfigEntry,
     mock_state_endpoint: aioresponses,
 ) -> AsyncIterator[MockConfigEntry]:
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    yield config_entry
+    await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+
+@pytest.fixture
+async def setup_integration_dmx_on(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint_dmx_on: aioresponses,
+) -> AsyncIterator[MockConfigEntry]:
+    """``setup_integration`` variant whose coordinator polls see DMX as enabled.
+
+    Use when a test needs the OptionsFlow's top-level menu to include
+    ``dmx_lights_menu`` without seeding an existing light (the orphan
+    branch).
+    """
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
     yield config_entry

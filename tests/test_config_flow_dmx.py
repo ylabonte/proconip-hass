@@ -25,11 +25,15 @@ CONNECTION_INPUT = {
 
 async def test_dmx_light_add_happy_path(
     hass: HomeAssistant,
-    setup_integration: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    setup_integration_dmx_on: MockConfigEntry,
 ) -> None:
-    """init (menu) → dmx_lights_menu → add → back to dmx_lights_menu → back to init → save."""
-    entry = setup_integration
+    """init (menu) → dmx_lights_menu → add → back to dmx_lights_menu → back to init → save.
+
+    Requires the DMX-on fixture: with DMX off + no pre-seeded light, the
+    top-level menu would omit ``dmx_lights_menu`` and this flow would
+    never start.
+    """
+    entry = setup_integration_dmx_on
     result = await hass.config_entries.options.async_init(entry.entry_id)
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "init"
@@ -107,11 +111,13 @@ async def test_dmx_light_add_overlap_rejected(
 
 async def test_round_trip_to_connection_settings_preserves_dmx_lights(
     hass: HomeAssistant,
-    setup_integration: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    setup_integration_dmx_on: MockConfigEntry,
 ) -> None:
-    """Adding a light then revisiting connection settings must not drop the light."""
-    entry = setup_integration
+    """Adding a light then revisiting connection settings must not drop the light.
+
+    DMX-on fixture so ``dmx_lights_menu`` is reachable from a clean start.
+    """
+    entry = setup_integration_dmx_on
     result = await hass.config_entries.options.async_init(entry.entry_id)
     # init → dmx_lights_menu → add
     result_lights = await hass.config_entries.options.async_configure(
@@ -154,10 +160,9 @@ async def test_round_trip_to_connection_settings_preserves_dmx_lights(
 
 async def test_dmx_light_add_out_of_range_rejected(
     hass: HomeAssistant,
-    setup_integration: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    setup_integration_dmx_on: MockConfigEntry,
 ) -> None:
-    entry = setup_integration
+    entry = setup_integration_dmx_on
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result_menu = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "dmx_lights_menu"}
@@ -200,6 +205,25 @@ async def _open_dmx_lights_menu(hass: HomeAssistant, entry: MockConfigEntry) -> 
     )
 
 
+async def test_options_flow_shows_dmx_entry_when_orphan_lights_exist(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """Controller reports DMX off but entry has lights → menu still shows dmx_lights_menu.
+
+    Lets the user clean up orphans (e.g. they disabled DMX in the
+    controller after configuring some lights). Uses the default DMX-off
+    fixture deliberately.
+    """
+    entry = setup_integration
+    _seed_one_light(hass, entry)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "init"
+    assert "dmx_lights_menu" in result["menu_options"]
+
+
 async def test_dmx_lights_menu_includes_remove_when_lights_exist(
     hass: HomeAssistant,
     setup_integration: MockConfigEntry,
@@ -218,11 +242,14 @@ async def test_dmx_lights_menu_includes_remove_when_lights_exist(
 
 async def test_dmx_lights_menu_omits_remove_when_no_lights(
     hass: HomeAssistant,
-    setup_integration: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    setup_integration_dmx_on: MockConfigEntry,
 ) -> None:
-    """No lights → no Remove entry (else it'd open a dead-end submenu)."""
-    entry = setup_integration
+    """No lights → no Remove entry (else it'd open a dead-end submenu).
+
+    Needs DMX-on fixture: with DMX off + no lights, ``dmx_lights_menu``
+    isn't reachable from the top-level menu at all.
+    """
+    entry = setup_integration_dmx_on
     result_menu = await _open_dmx_lights_menu(hass, entry)
     assert result_menu["type"] is FlowResultType.MENU
     assert "dmx_lights_remove_menu" not in result_menu["menu_options"]
