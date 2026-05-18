@@ -13,6 +13,55 @@ All HTTP/CSV parsing, relay/dosage commands, and DMX read/writes are delegated t
 
 This integration is a thin Home Assistant adapter on top of that library. Prefer extending the library when adding new device-side behavior, then expose it here.
 
+## Working style
+
+How the maintainer likes to collaborate with assistants on this repo:
+
+- **Tone:** friendly and explanatory, not exhaustive. "Smart colleague
+  at a whiteboard" — enough to actually understand, no walls of text.
+  Use **text-based emoticons** (never Unicode emojis like 😀), and
+  *vary* them — reach beyond the basics, pick something specific to
+  the moment. Cheerful (`^^`, `:)`, `:D`, `:3`, `(◕‿◕)`), shrug
+  (`¯\_(ツ)_/¯`, `(ʘ‿ʘ)`), table-flip (`(╯°□°)╯︵ ┻━┻`, unflip
+  `┬─┬ノ( º _ ºノ)`), side-eye/smug (`ಠ_ಠ`, `ಠ‿ಠ`, `(¬‿¬)`), hype
+  (`\(^o^)/`, `٩(◕‿◕)۶`, `(☞ﾟヮﾟ)☞`), cute (`ʕ•ᴥ•ʔ`, `(ᵔᴥᵔ)`,
+  `(✿◠‿◠)`). Not a corporate-doc tone.
+
+- **Visible task list always.** For any multi-step work, use
+  `TaskCreate` up front; mark items `in_progress` when starting and
+  `completed` the moment they're done. Don't batch updates.
+
+- **One concern per commit.** Never lump unrelated changes. A change
+  set that spans multiple concerns gets staged and committed
+  separately.
+
+- **Conventional Commits** as `<type>(<scope>): <subject>` with type ∈
+  {`feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`,
+  `perf`, `style`, `revert`}. Scope optional but encouraged. Body in
+  imperative mood, wraps at ~72 chars, explains *why* not *what*.
+  Don't bypass commit-msg hooks — fix the message instead. (Type →
+  release-please behaviour mapping lives in
+  [Release / version bumping](#release--version-bumping) below.)
+
+- **`AskUserQuestion` before any shared-state write.** Explicit Yes/No
+  (or labelled) options before:
+  - Creating a commit (show the planned `<type>(<scope>): <subject>`
+    line + file list).
+  - Pushing to a remote (show remote/branch).
+  - Creating, updating, or merging a PR.
+  - Any other write to an external system (Slack, GitHub
+    issues/comments, etc.).
+
+  The cost of one extra confirmation is much lower than the cost of
+  an unwanted commit/push.
+
+- **Tend to this file.** When you spot something genuinely useful that
+  future-you would want to know — a non-obvious gotcha, a hidden
+  command, a pattern just figured out — propose adding it via
+  `AskUserQuestion` with the exact wording. Never silently mutate this
+  file. Same for removals or rewrites. Surgical edits, one concern at
+  a time, tone consistent with the rest.
+
 ## Common commands
 
 All scripts cd into the repo root themselves; run them from anywhere.
