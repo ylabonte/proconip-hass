@@ -12,5 +12,23 @@
     },
     "ruff.importStrategy": "fromEnvironment",
     "python.analysis.autoImportCompletions": true,
-    "pylint.enabled": false
+    "pylint.enabled": false,
+
+    // Don't watch the venv. HA's lazy pip-installer churns .venv/ on
+    // first boot; without this, the file watcher fires thousands of
+    // events and every language-server client restarts ("Server
+    // disconnected unexpectedly" toast spam).
+    "files.watcherExclude": {
+        "**/.venv/**": true,
+        "**/.mypy_cache/**": true,
+        "**/.ruff_cache/**": true,
+        "**/.pytest_cache/**": true,
+        "**/__pycache__/**": true
+    },
+    "search.exclude": {
+        "**/.venv": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/.pytest_cache": true
+    }
 }

@@ -42,37 +42,17 @@ if [ ! -x .venv/bin/python ] || ! .venv/bin/python --version >/dev/null 2>&1; th
 fi
 
 .venv/bin/python -m pip install --upgrade pip setuptools
+
+# Project + dev + test deps. pytest-homeassistant-custom-component pulls
+# in `homeassistant` itself, so we don't need to list it explicitly.
 .venv/bin/python -m pip install --upgrade -e ".[dev,test]"
 
-# Pre-install home-assistant-frontend so the dev HA instance doesn't have to
-# race lazy-install vs first-import on startup (it loses, frontend ends up
-# in recovery mode). This package is ~50 MB and HA Core does NOT install it
-# automatically — it's a runtime-only lazy dep.
-.venv/bin/python -m pip install --upgrade home-assistant-frontend
+# colorlog gives the `hass` CLI nice colored output.
+.venv/bin/python -m pip install --upgrade colorlog
 
-# Pre-install deps for HA's hardcoded "base components" list. HA's
-# helpers/service.py:_base_components() imports ai_task / camera /
-# conversation / ffmpeg / tts / etc. *unconditionally* — --skip-pip on the
-# HA process doesn't help because the imports happen at module-load time,
-# not via the pip-install-on-demand path. The frontend's `get_services`
-# call fires _base_components() and crashes on the first missing dep,
-# which blocks every UI render. Pre-installing covers the chain.
-.venv/bin/python -m pip install --upgrade \
-    hassil \
-    home-assistant-intents \
-    ha-ffmpeg \
-    PyTurboJPEG \
-    'rf-protocols==2.2.0' \
-    'infrared-protocols==2.0.0' \
-    mutagen \
-    av \
-    PyMetno \
-    radios \
-    pycountry \
-    aiodhcpwatcher \
-    aiousbwatcher \
-    aiodiscover \
-    cached-ipaddress \
-    async-upnp-client \
-    file-read-backwards \
-    serialx
+# Pre-install HA's eager-import + slim-config integration requirements
+# by walking HA's own manifest.json files. Avoids the lazy-install race
+# on first `scripts/develop` (where HA's async installer loses to
+# component imports and lands us in recovery mode). See the script's
+# docstring for the full why.
+.venv/bin/python scripts/install-ha-deps.py

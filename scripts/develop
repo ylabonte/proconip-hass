@@ -24,13 +24,10 @@ fi
 ## without resulting to symlinks.
 export PYTHONPATH="${PYTHONPATH}:${PWD}/custom_components"
 
-# Start Home Assistant. We deliberately do NOT pass --skip-pip:
-# HA's helpers/service.py:_base_components() unconditionally imports
-# ~19 built-in components at module-load time, each with its own
-# transitive Python deps (mutagen, pymicro_vad, …). Keeping --skip-pip
-# would leave gaps in that import chain and crash every get_services
-# WebSocket call (the frontend can't render without it). Letting HA
-# lazy-install the missing pieces on first boot is slower once but
-# produces a working UI. Subsequent boots are fast because the deps
-# are cached.
-"$HASS" --config "${PWD}/config" --debug
+# Start Home Assistant. We pass --skip-pip because scripts/setup has
+# already installed every dep our slim config + HA's `_base_components()`
+# need (via scripts/install-ha-deps.py walking HA's manifests). With
+# --skip-pip, HA won't try to lazy-install anything at boot — so no
+# install storm, no race against component setup, and no churn in
+# .venv that would restart the language servers.
+exec "$HASS" --config "${PWD}/config" --debug --skip-pip

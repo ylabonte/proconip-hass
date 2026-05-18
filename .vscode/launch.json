@@ -13,7 +13,13 @@
             "args": [
                 "--debug",
                 "-c",
-                "config"
+                "config",
+                // scripts/setup pre-installs every dep our slim config +
+                // HA's _base_components() need (via scripts/install-ha-deps.py).
+                // --skip-pip stops HA from racing its own async installer
+                // against component setup — which is what lands us in
+                // recovery mode otherwise.
+                "--skip-pip"
             ],
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/custom_components"

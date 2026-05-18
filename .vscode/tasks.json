@@ -3,13 +3,10 @@
     "tasks": [
         {
             "label": "ProCon.IP mock server",
-            "detail": "Mock ProCon.IP controller on http://127.0.0.1:8080 (admin/admin). Auto-starts with the devcontainer; restart with `Tasks: Restart Running Task`.",
+            "detail": "Foreground mock controller on http://127.0.0.1:8080 (admin/admin). The devcontainer already auto-starts a backgrounded mock via postStartCommand; this task is for restarting it manually with visible logs.",
             "type": "shell",
             "command": "scripts/mock-server",
             "isBackground": true,
-            "runOptions": {
-                "runOn": "folderOpen"
-            },
             "presentation": {
                 "panel": "dedicated",
                 "reveal": "silent",

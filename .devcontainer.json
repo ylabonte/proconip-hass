@@ -5,6 +5,23 @@
         "type=volume,target=${containerWorkspaceFolder}/.venv"
     ],
     "postCreateCommand": "sudo chown $(id -u):$(id -g) .venv && scripts/setup",
+    // Auto-start the ProCon.IP mock on every container start. The script
+    // is vendored from proconip-pypi/.devcontainer/start-mock.sh — it
+    // backgrounds the server, polls /GetState.csv until it answers, and
+    // fails the postStart hook if the mock didn't come up. PYTHON points
+    // at the venv created by postCreateCommand.
+    "postStartCommand": "PYTHON=.venv/bin/python bash .devcontainer/start-mock.sh",
+    // The mock and HA are both inside the container; bind 0.0.0.0 so the
+    // forwarded port works for host-side curl/browser requests too.
+    // PROCONIP_MOCK_DMX=1 flips on bits 2 + 8 of SYSINFO[5] so the
+    // client-side `is_dmx_enabled()` / `is_dmx_extension_enabled()`
+    // checks return True — without this the integration's DMX features
+    // are gated off and there's nothing to exercise.
+    "remoteEnv": {
+        "PROCONIP_MOCK_HOST": "0.0.0.0",
+        "PROCONIP_MOCK_PORT": "8080",
+        "PROCONIP_MOCK_DMX": "1"
+    },
     "forwardPorts": [
         8080,
         8123
@@ -42,6 +59,24 @@
                 "editor.tabSize": 4,
                 "files.eol": "\n",
                 "files.trimTrailingWhitespace": true,
+                // Don't watch the venv. HA's lazy pip-installer churns
+                // .venv/ heavily on first boot; without this, VS Code's
+                // file watcher fires thousands of events and every
+                // language-server client restarts ("Server disconnected
+                // unexpectedly" toast spam).
+                "files.watcherExclude": {
+                    "**/.venv/**": true,
+                    "**/.mypy_cache/**": true,
+                    "**/.ruff_cache/**": true,
+                    "**/.pytest_cache/**": true,
+                    "**/__pycache__/**": true
+                },
+                "search.exclude": {
+                    "**/.venv": true,
+                    "**/.mypy_cache": true,
+                    "**/.ruff_cache": true,
+                    "**/.pytest_cache": true
+                },
                 "ruff.importStrategy": "fromEnvironment",
                 "mypy-type-checker.importStrategy": "fromEnvironment",
                 "mypy-type-checker.args": ["--config-file=pyproject.toml"],
@@ -69,6 +104,20 @@
     },
     "remoteUser": "vscode",
     "features": {
-        "ghcr.io/devcontainers/features/rust:1": {}
+        // System libraries HA pulls in via its eager-import set:
+        //   ffmpeg          → ha-ffmpeg (assist_pipeline → tts)
+        //   libturbojpeg0   → PyTurboJPEG (camera)
+        // No bluetooth/usb/dhcp stack — our slim config doesn't load
+        // those integrations. If you switch to `default_config:`, also
+        // add libpcap-dev, libudev-dev, bluez here.
+        //
+        // No Rust toolchain. Every Rust-backed dep HA pulls in
+        // (cryptography, orjson, pydantic-core, …) publishes cp314 linux
+        // wheels on PyPI, so pip never builds from source. If a future
+        // HA dep ships only sdist for cp314, add
+        // `ghcr.io/devcontainers/features/rust:1` back.
+        "ghcr.io/devcontainers-extra/features/apt-packages:1": {
+            "packages": "ffmpeg,libturbojpeg0"
+        }
     }
 }

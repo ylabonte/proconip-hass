@@ -1,25 +1,21 @@
-# Minimal Home Assistant config for developing this integration.
+# Dev Home Assistant config.
 #
-# We intentionally do NOT use `default_config:` here, even though it's
-# what real users have. `default_config` pulls in ~30 built-in components
-# (camera, ffmpeg, bluetooth, dhcp, ssdp, conversation, mobile_app, …),
-# each with runtime deps that aren't pre-installed in pytest-homeassistant-
-# custom-component's HA install. HA tries to lazy-pip-install them on
-# startup, the import races the install, most fail with ModuleNotFoundError,
-# the file-system churn triggers Pylance/mypy LSP restarts (the
-# "Server[N] disconnected unexpectedly" popups), and HA ends up in
-# recovery mode because the frontend dep couldn't load in time.
+# Slim component set on purpose: just what's needed to add and exercise
+# the proconip integration from the UI. We do NOT use `default_config:`
+# because that loads ~30 integrations (bluetooth, usb, dhcp, ssdp, cloud,
+# mobile_app, …) whose runtime deps would trigger HA's async lazy
+# installer at boot — and that installer doesn't block component setup,
+# so first boots end up in recovery mode while installs race against
+# imports. The lazy-install storm also churns .venv hard enough to
+# restart every language server in VS Code.
 #
-# The components below give us:
-#   - the frontend UI (to add and configure the integration from the UI),
-#   - the config-entries / device-registry pages,
-#   - the HTTP API,
-#   - logging with our integration set to debug.
+# Instead, scripts/setup pre-installs the pip requirements for these
+# integrations AND for HA's hard-coded `_base_components()` eager-import
+# list, by walking HA's own manifest.json files (no hand-curated package
+# names). See scripts/install-ha-deps.py.
 #
-# If you need to test against the real-user "default_config" stack, run
-# `.venv/bin/python -m homeassistant --config config --skip-pip` once to
-# let HA install everything, then `--skip-pip-packages
-# home-assistant-frontend` on subsequent boots to skip re-checks.
+# If you add an integration key below, also add it to CONFIG_INTEGRATIONS
+# in scripts/install-ha-deps.py so its deps get pre-installed.
 
 frontend:
 config:
