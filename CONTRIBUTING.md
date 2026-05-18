@@ -38,14 +38,38 @@ After the container is up, VS Code uses
 `/workspaces/proconip-hass/.venv/bin/python` as the interpreter, and the
 Ruff + Mypy extensions pick up the project's tool versions automatically.
 
-A **mock ProCon.IP controller** starts automatically alongside the
-devcontainer (`tools/proconip_mock/`, an aiohttp server with drifting
-sensor values + mutable relay/DMX state). It listens on
-http://127.0.0.1:8080 with basic auth `admin`/`admin`. When you add the
-integration in HA, point it at that URL to exercise the full flow
-without owning real hardware. The mock task's logs show up in VS Code's
-**Terminal → ProCon.IP mock server** panel; restart it via the Command
-Palette (`Tasks: Restart Running Task`) if you need a fresh state.
+> **`scripts/setup` pre-installs HA's eager-import deps** (`pymicro-vad`,
+> `hassil`, `PyTurboJPEG`, `home-assistant-frontend`, …) by walking each
+> integration's `manifest.json` via `scripts/install-ha-deps.py`. That
+> way `scripts/develop` can boot with `--skip-pip` and HA initializes in
+> well under a second — no lazy-install storm, no recovery mode. Don't
+> hand-curate a pip-package list to replace this; HA's manifests are
+> the source of truth.
+
+A **mock ProCon.IP controller** starts automatically on every container
+start via `.devcontainer.json`'s `postStartCommand`, which runs
+`.devcontainer/start-mock.sh`. The script backgrounds the server, polls
+`/GetState.csv` until it answers, and fails the postStart hook if the
+mock didn't come up — so a silent startup failure can't hide. Logs go
+to `/tmp/proconip-mock.log` inside the container.
+
+The mock is an aiohttp server with drifting sensor values + mutable
+relay/DMX state. It binds `0.0.0.0:8080` inside the container (the
+devcontainer overrides the package's loopback default via
+`PROCONIP_MOCK_HOST=0.0.0.0` in `remoteEnv`), and the container's port
+8080 is forwarded to the host. Point HA at `http://127.0.0.1:8080` with
+`admin`/`admin` to exercise the full flow without owning real hardware.
+
+> **`tools/proconip_mock/` and `.devcontainer/start-mock.sh` are
+> vendored from `ylabonte/proconip-pypi`.** That's where the canonical
+> implementation lives (alongside the library). Update there first,
+> then re-sync here — don't edit in place.
+
+For a foreground mock with visible logs, run `scripts/mock-server` or use
+the **Tasks → ProCon.IP mock server** task in VS Code (defaults to
+loopback only; override via `PROCONIP_MOCK_HOST=0.0.0.0` if you need
+external access). Restart the auto-started instance with `bash
+.devcontainer/start-mock.sh` from the container terminal.
 
 ### Option B — Local dev (host machine)
 
@@ -92,8 +116,8 @@ source .venv/bin/activate
 | `ruff format .`                        | Auto-format your changes.                                                    |
 | `ruff check --fix .`                   | Auto-fix safe lint findings.                                                 |
 | `scripts/develop`                      | Boot a local Home Assistant on port 8123 with this integration loaded.       |
-| `scripts/dev-reset`                    | Wipe `config/.storage/`, the recorder DB, logs, etc. — fresh HA state on next run. Keeps `config/configuration.yaml`. Use when stale config entries (e.g. from a previous `default_config:` run) cause lazy-install errors. |
-| `scripts/mock-server`                  | Run the mock ProCon.IP controller on http://127.0.0.1:8080 (basic auth `admin`/`admin`). Auto-started by the devcontainer; only run manually for host-side dev. Override with `MOCK_PORT=…`, `MOCK_USER=…`, `MOCK_PASS=…`. |
+| `scripts/dev-reset`                    | Wipe `config/.storage/`, the recorder DB, logs, etc. — fresh HA state on next run. Keeps `config/configuration.yaml`. Use when stale config entries cause lazy-install errors after a `manifest.json` change. |
+| `scripts/mock-server`                  | Run the mock ProCon.IP controller in the foreground (logs to stdout). Defaults to `127.0.0.1:8080` with `admin`/`admin`. The devcontainer auto-starts a backgrounded mock on `0.0.0.0:8080` via `.devcontainer/start-mock.sh`; use this script only for manual smoke-testing. Override via `PROCONIP_MOCK_HOST=…`, `PROCONIP_MOCK_PORT=…`, `PROCONIP_MOCK_USER=…`, `PROCONIP_MOCK_PASS=…`. |
 
 ## Code conventions
 
@@ -168,28 +192,63 @@ repo root.
 
 - Branch from `main`. Use a descriptive branch name
   (`feat/dmx-rgb-light`, `fix/options-flow-crash`, etc.).
-- Write **short, imperative commit subject lines** — no Conventional
-  Commits prefix in the subject. Recent log: `Update actions versions`,
-  `Bump proconip to >=2.0.0 and switch to top-level imports`, etc.
+- **Commit titles must be Conventional Commits.** The maintainer
+  squash-merges, so the PR title becomes the commit subject — title your
+  PR like the commit you want recorded.
 - Keep commits focused. One logical change per commit. Multiple related
-  commits per PR is fine.
+  commits per PR is fine, but each should still carry the right
+  conventional type.
 - Reference issues in the commit body or PR description (`Closes #123`).
+
+### Conventional Commits — type → release behaviour
+
+[release-please](https://github.com/googleapis/release-please) reads
+these on every push to `main` and decides what to do.
+
+| Type | Triggers a release? | Visible in CHANGELOG? | Use for |
+|---|---|---|---|
+| `feat` | minor bump | yes (Features) | new entity, new config option, new feature |
+| `feat!` or `BREAKING CHANGE:` footer | major bump | yes (Features + breaking note) | renamed entity_id, removed entity, HA-min bump |
+| `fix` | patch bump | yes (Bug Fixes) | user-visible bugfix |
+| `perf` | patch bump | yes (Performance) | perf change without behaviour change |
+| `deps` | none | yes (Dependencies) | proconip / HA / runtime dep bump |
+| `docs` | none | yes (Documentation) | README/CONTRIBUTING/CLAUDE.md edits |
+| `refactor` | none | hidden | internal cleanup with no behaviour change |
+| `test` | none | hidden | adding/changing tests only |
+| `build` | none | hidden | build-system / packaging changes |
+| `ci` | none | hidden | anything under `.github/` |
+| `chore` | none | hidden | catch-all: lockfile bumps, formatting, devcontainer/scripts/tools |
+
+**Rule of thumb — when is a commit user-facing?** If the change is
+limited to `.github/`, `.devcontainer/`, `.vscode/`, `scripts/`,
+`tools/`, `tests/`, or documentation, use a silent type
+(`ci`/`chore`/`test`/`docs`/`refactor` as appropriate). If the change
+touches `custom_components/proconip_pool_controller/`, `manifest.json`'s
+non-`version` fields, or `translations/*.json` user-visible labels, use
+`feat`/`fix`/`perf` so it lands in the next release notes.
+
+**Mixed-change PR rule:** split into separate commits with the right
+types. Don't describe a CI tweak in a `feat:` commit — release-please
+would file it in the wrong section.
 
 ## Pull requests
 
 - PR against `main`.
+- **Title the PR as the conventional commit you want recorded** —
+  squash-merge turns the PR title into the commit subject.
 - Describe **what** and **why**. The reviewer should be able to skip the
   diff and still understand intent.
 - Include a **Test plan** — what you did to verify the change. For
   user-facing changes, a manual smoke-test checklist (run via
   `scripts/develop`) is welcome.
-- CI must be green: `Lint`, `Test`, `Validate (Hassfest + HACS)`, `CodeQL`.
-- Update [`CHANGELOG.md`](CHANGELOG.md) under `## [Unreleased]` for any
-  user-visible change (entity additions/removals, breaking config
-  changes, HA-min bumps).
+- CI must be green: `Lint`, `Test`, `Validate (Hassfest + HACS)`,
+  `CodeQL`.
+- **Don't edit `CHANGELOG.md` yourself** — release-please owns it.
+  Your conventional commit subject is what shows up in the next release
+  entry.
 - Note that **adding or removing entities** means users have to clean up
-  obsolete entities manually. Call this out in the changelog when it
-  happens.
+  obsolete entities manually. Mention this in the commit body or PR
+  description so it makes it into the release notes context.
 
 ## Translations
 
@@ -204,21 +263,20 @@ The integration is fully translatable. Strings live under
 
 ## Release flow
 
-Releases are cut by **publishing a GitHub release** with a `vX.Y.Z` tag.
-The [`release.yml`](.github/workflows/release.yml) workflow:
+Releases are **fully automated by [release-please](https://github.com/googleapis/release-please)** — maintainers don't tag, draft release notes, or zip by hand. Conventional Commit titles on `main` (see the table above) drive everything.
 
-1. Re-runs `test` and `lint` workflows (a release won't ship with broken
-   CI).
-2. Rewrites `manifest.json` `version` to the tag.
-3. Zips the integration directory and attaches it to the release as
-   `proconip_pool_controller.zip` (the HACS download).
+1. Land PRs on `main` with conventional commit titles.
+2. [`release.yml`](.github/workflows/release.yml) runs `release-please-action@v5` on every push. If new `feat`/`fix`/`perf`/`revert`/`deps`/`docs` commits exist since the last release, it opens or updates a **"chore(main): release X.Y.Z" PR** that:
+    - bumps `.release-please-manifest.json`
+    - bumps `custom_components/proconip_pool_controller/manifest.json:version` (via release-please's `extra-files: json` config)
+    - bumps `custom_components/proconip_pool_controller/const.py:VERSION` (via `extra-files: generic` — the `# x-release-please-version` comment is the marker; don't remove it)
+    - prepends the generated changelog entry to `CHANGELOG.md`
+3. Review and merge that PR. release-please cuts the `vX.Y.Z` tag and creates the GitHub release.
+4. [`hacs-release.yml`](.github/workflows/hacs-release.yml) fires on `release: published`, re-runs `test` + `lint` against the released tag, zips `custom_components/proconip_pool_controller/`, and attaches `proconip_pool_controller.zip` to the release. HACS picks it up on next poll.
 
-Don't hand-edit `manifest.json` `version` for a release — let the tag
-drive it.
+Don't hand-edit `manifest.json:version`, `const.py:VERSION`, or `.release-please-manifest.json` — release-please owns all three. The marker comment on `VERSION` must stay verbatim.
 
-After publishing the release, the maintainer opens a PR against
-[`hacs/default`](https://github.com/hacs/default) (post-2.0.0) to keep
-the HACS-default listing current.
+After the first release-please-managed release lands, the maintainer opens a PR against [`hacs/default`](https://github.com/hacs/default) (post-2.0.0) to keep the HACS-default listing current.
 
 ## Getting help
 

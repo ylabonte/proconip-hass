@@ -19,11 +19,21 @@ All scripts cd into the repo root themselves; run them from anywhere.
 
 | Command | What it does |
 |---|---|
-| `scripts/setup` | `pip install -r requirements.txt` (HA core, ruff, mypy, pre-commit, colorlog, proconip lib) |
-| `scripts/develop` | Boots a local Home Assistant on port 8123 with `custom_components/` on `PYTHONPATH` and `config/configuration.yaml`. Use this to manually verify changes. |
-| `scripts/lint` | Ruff lint and format, mypy type-check. Run pre-commit hooks on all files. |
+| `scripts/setup` | Creates `.venv` (Python ≥ 3.13), `pip install -e ".[dev,test]"` + `colorlog`, then runs `scripts/install-ha-deps.py` to pre-install HA's eager-import deps (parsed from each `manifest.json`). |
+| `scripts/install-ha-deps.py` | Walks HA's bundled `components/<name>/manifest.json` to install the pip packages our slim config + HA's `_base_components()` need. The source of truth is HA's manifests — *do not hand-curate a list of pip packages here.* |
+| `scripts/develop` | Boots a local Home Assistant on port 8123 with `--skip-pip` (everything was pre-installed by setup). Use this to manually verify changes. |
+| `scripts/lint` | Ruff lint and format, mypy type-check. |
+| `scripts/mock-server` | Foreground ProCon.IP mock for manual smoke-testing (logs to stdout, defaults to `127.0.0.1:8080` admin/admin). The devcontainer auto-starts a *backgrounded* mock on `0.0.0.0:8080` via `.devcontainer/start-mock.sh` (wired to `postStartCommand`). |
+| `scripts/dev-reset` | Wipes `config/` (except `configuration.yaml`) to re-onboard HA from scratch. |
 
-There is **no test suite** and no `pytest` configured. Verification is: `scripts/lint` + boot via `scripts/develop` + manually exercise the integration in the HA UI.
+**If you add an integration to `config/configuration.yaml`,** also add it to `CONFIG_INTEGRATIONS` in `scripts/install-ha-deps.py` so its manifest requirements get pre-installed. Same goes for `BASE_COMPONENTS` if HA Core changes `_base_components()`. Don't `default_config:` the dev config — that loads ~30 integrations whose lazy install races at boot and lands HA in recovery mode.
+
+**`tools/proconip_mock/` and `.devcontainer/start-mock.sh` are vendored from `ylabonte/proconip-pypi`** (canonical home, alongside the library). When the mock needs changes, do them in `proconip-pypi` first and re-sync here — don't edit in place. Useful diff:
+```bash
+diff -rq tools/proconip_mock/ ../proconip-pypi/tools/proconip_mock/
+```
+
+Verification is: `pytest` (`scripts/lint` runs ruff + mypy) + boot via `scripts/develop` + manually exercise the integration in the HA UI. There is a real pytest suite — see `tests/` and `pyproject.toml`'s `[tool.pytest.ini_options]`.
 
 CI also runs **hassfest** (`home-assistant/actions/hassfest`) and **HACS validation** (`hacs/action`) on push/PR — if you change `manifest.json`, `hacs.json`, or platform structure, expect those to enforce conformance.
 
@@ -71,13 +81,58 @@ Key facts that aren't obvious from a single file:
 
 ## Release / version bumping
 
-Releases are cut by **publishing a GitHub release**:
+Releases are fully automated by [release-please](https://github.com/googleapis/release-please) — maintainers don't tag, draft notes, or zip by hand. Conventional Commits on `main` decide the next version and what appears in the changelog.
 
-1. `release.yml` triggers on `release: published`.
-2. It rewrites `custom_components/proconip_pool_controller/manifest.json` `version` to the release tag using `yq`.
-3. It zips the integration directory and attaches `proconip_pool_controller.zip` to the release for HACS.
+**Flow:**
 
-So: don't hand-edit `manifest.json` `version` for a release — just create the GitHub release with the right tag. **Do** keep `const.py` `VERSION` and `manifest.json` `version` in sync for development (the README changelog references this) and bump `hacs.json` `homeassistant` minimum if you start using newer HA APIs. Current minimum: **HA 2024.2.1**, Python **3.12** (see devcontainer image `python:dev-3.12`).
+1. Land PRs on `main` with Conventional Commit titles (`feat:`, `fix:`, `chore:`, etc. — see the table below). Squash-merge is the default, so the PR title becomes the commit subject.
+2. `.github/workflows/release.yml` runs on every push to `main`. It invokes `googleapis/release-please-action@v5`, which:
+    - Scans new commits since the last release.
+    - If any new `feat`/`fix`/`perf`/`revert` commits exist, opens or updates a **"chore(main): release X.Y.Z" PR** that bumps `.release-please-manifest.json`, `custom_components/proconip_pool_controller/manifest.json:version` (via `extra-files: json`), and `custom_components/proconip_pool_controller/const.py:VERSION` (via `extra-files: generic` — that's what the `# x-release-please-version` comment marker is for; do not remove it), and prepends a changelog entry to `CHANGELOG.md`.
+3. Review the auto-PR. CI runs against it (App-token-authored, so downstream workflows fire). Merge it.
+4. release-please cuts the `vX.Y.Z` tag and creates the GitHub release with the auto-generated notes.
+5. `.github/workflows/hacs-release.yml` triggers on `release: published`, re-runs `test` + `lint` against the released tag, zips `custom_components/proconip_pool_controller/`, and attaches `proconip_pool_controller.zip` to the release. HACS picks it up on next poll.
+
+**Don't:** hand-edit `manifest.json:version` or `const.py:VERSION`. Both are owned by release-please's `extra-files` config. The marker comment on the `VERSION` line must stay verbatim.
+
+**Do:** bump `hacs.json:homeassistant` minimum if you start using newer HA APIs. Current minimum: **HA 2024.2.1**, Python **3.13+** (see devcontainer image `python:dev-3.14` and `pyproject.toml:requires-python`).
+
+### Conventional Commits — when to bump, when to be silent
+
+**Default behavior on every code-changing task:** at commit-write time, decide the conventional-commit `type` from the table below. **If the type would trigger a release entry, ask the user to confirm subject + type before committing.** For silent types (`ci`/`chore`/`test`/etc.) commit without asking.
+
+| Type | Trigger release? | Visible in CHANGELOG? | Use when |
+|---|---|---|---|
+| `feat` | minor bump | yes (Features) | new entity, new config option, new feature |
+| `feat!` or `BREAKING CHANGE:` footer | major bump | yes (Features + breaking note) | renamed entity_id, removed entity, raised HA minimum version |
+| `fix` | patch bump | yes (Bug Fixes) | bugfix that users would notice |
+| `perf` | patch bump | yes (Performance) | perf change without behaviour change |
+| `deps` | none | yes (Dependencies) | proconip / HA / other runtime dep bumps |
+| `docs` | none | yes (Documentation) | README/CONTRIBUTING/CLAUDE.md changes |
+| `refactor` | none | hidden | internal rewrites with no behaviour change |
+| `test` | none | hidden | adding/changing tests only |
+| `build` | none | hidden | build system tweaks |
+| `ci` | none | hidden | anything under `.github/` or release workflows |
+| `chore` | none | hidden | catch-all: lockfile bumps, formatting, devcontainer/scripts/tools |
+
+**Silent-by-default paths** (commit with `ci:` / `chore:` / `test:` / `docs:` as appropriate, no question asked):
+
+- `.github/`, `.devcontainer/`, `.vscode/`
+- `scripts/`, `tools/`
+- `tests/`, `pyproject.toml` test/lint config, `.pre-commit-config.yaml`
+- `CLAUDE.md`, `CONTRIBUTING.md`, `README.md`, comments, docstrings
+- Pure formatting, type-only refactors
+
+**Always ask before committing** when the change touches:
+
+- `custom_components/proconip_pool_controller/**` non-trivially (any new/changed/removed entity, config-flow change, user-visible string, behaviour change)
+- `manifest.json` (other than the release-please-owned `version` field)
+- `translations/*.json` for user-visible labels
+- Dependency version constraints
+
+**Mixed-change PR rule:** split into separate commits with the right types. Don't describe a CI tweak in a `feat:` commit — release-please would file the wrong section.
+
+**When in doubt, ask the user.** Never silently choose `chore:` for a borderline case.
 
 ### Post-release follow-up: HACS default-list submission
 
@@ -87,8 +142,17 @@ open a PR against [hacs/default](https://github.com/hacs/default) adding
 brand assets at `home-assistant/brands/custom_integrations/proconip_pool_controller/`
 are already in place. PR must be opened from a personal account, not an org.
 
+**Once the hacs/default PR is merged** (not before — the badge would be
+a false claim and the install steps wouldn't work until the listing
+propagates), apply the README rewrite staged in
+[`docs/HACS-DEFAULT-README-snippet.md`](docs/HACS-DEFAULT-README-snippet.md).
+That file contains the exact patch (Install section + badge + link
+refs) plus a step to delete itself. Suggested PR title:
+`docs: remove custom-repository install steps now that we're in HACS default`.
+
 ## Commit / PR guidance
 
 - Branch from `main`, PR back to `main`. Lint must pass (`scripts/lint`); hassfest + HACS validation run automatically.
-- Commit style in `git log` is short imperative subjects ("Update actions versions", "Bump actions/setup-python ..."). Match that — no scope prefixes, no Conventional Commits.
-- The README has a Changelog section. For user-visible changes (new entities, breaking entity-id changes, HA min-version bumps), add an entry there in addition to the release notes — note that adding/removing entities means *users have to clean up old ones manually* (see the v1.2.0 warning); call this out in the changelog when it happens.
+- **Commit titles must be Conventional Commits** — release-please reads them to decide version bumps and changelog placement. See the table in the **Release / version bumping** section above for the type → behaviour mapping.
+- Squash-merge is the default: the PR title is the resulting commit subject on `main`. Title your PR like the commit you want release-please to record.
+- The `CHANGELOG.md` is owned by release-please. Don't edit historical entries (anything below `## [Unreleased]`); new entries are prepended automatically when the release PR opens.
