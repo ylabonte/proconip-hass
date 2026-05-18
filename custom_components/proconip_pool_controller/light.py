@@ -148,8 +148,17 @@ class ProconipDmxRgbLight(ProconipDmxLightEntityBase):
         else:
             r, g, b = 255, 255, 255
         if ATTR_BRIGHTNESS in kwargs:
-            scale = kwargs[ATTR_BRIGHTNESS] / 255.0
-            r, g, b = int(r * scale), int(g * scale), int(b * scale)
+            # Scale so the brightest channel equals the requested brightness;
+            # naive `value * brightness / 255` would silently dim the colour
+            # on every slider change because the max channel is rarely 255.
+            current_max = max(r, g, b)
+            if current_max > 0:
+                scale = kwargs[ATTR_BRIGHTNESS] / current_max
+                r, g, b = (
+                    int(round(r * scale)),
+                    int(round(g * scale)),
+                    int(round(b * scale)),
+                )
         self._write_channels([r, g, b])
         await self.coordinator.async_request_refresh()
 
@@ -180,13 +189,17 @@ class ProconipDmxRgbwLight(ProconipDmxLightEntityBase):
         else:
             r, g, b, w = 0, 0, 0, 255
         if ATTR_BRIGHTNESS in kwargs:
-            scale = kwargs[ATTR_BRIGHTNESS] / 255.0
-            r, g, b, w = (
-                int(r * scale),
-                int(g * scale),
-                int(b * scale),
-                int(w * scale),
-            )
+            # Scale so the brightest channel equals the requested brightness;
+            # see ProconipDmxRgbLight.async_turn_on for the same fix.
+            current_max = max(r, g, b, w)
+            if current_max > 0:
+                scale = kwargs[ATTR_BRIGHTNESS] / current_max
+                r, g, b, w = (
+                    int(round(r * scale)),
+                    int(round(g * scale)),
+                    int(round(b * scale)),
+                    int(round(w * scale)),
+                )
         self._write_channels([r, g, b, w])
         await self.coordinator.async_request_refresh()
 
