@@ -17,7 +17,7 @@ from homeassistant.const import (
 from homeassistant.core import (
     callback,
 )
-from homeassistant.helpers import selector, translation
+from homeassistant.helpers import selector
 from proconip import (
     BadCredentialsException,
     BadStatusCodeException,
@@ -30,6 +30,34 @@ from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 
 LIGHT_TYPE_CHANNEL_COUNT: dict[str, int] = {"dimmer": 1, "rgb": 3, "rgbw": 4}
 
+# Labels for the DMX submenu's dynamic per-light rows. These can't live
+# in translations/<lang>.json because hassfest rejects custom top-level
+# keys under `options`, and the standard `options.step.<step>.menu_options`
+# slot expects fixed step_id keys — ours are dynamic (one per light slug).
+# Localising by hand keeps the German UI intact without depending on a
+# namespace the HA strings schema doesn't recognise.
+_DOCS_URL = "https://github.com/ylabonte/proconip-hass"
+_DMX_MENU_STRINGS: dict[str, dict[str, str]] = {
+    "en": {
+        "add_light": "Add light",
+        "remove_light": "Remove a light…",
+        "back": "Back",
+        "cancel": "Cancel",
+        "edit_light_template": 'Edit "{name}" ({type} · ch {channel})',
+        "list_light_template": '"{name}" ({type} · ch {channel})',
+        "remove_light_template": 'Remove "{name}"',
+    },
+    "de": {
+        "add_light": "Licht hinzufügen",
+        "remove_light": "Licht entfernen…",
+        "back": "Zurück",
+        "cancel": "Abbrechen",
+        "edit_light_template": "„{name}“ bearbeiten ({type} · Kanal {channel})",
+        "list_light_template": "„{name}“ ({type} · Kanal {channel})",
+        "remove_light_template": "„{name}“ entfernen",
+    },
+}
+
 
 def _slugify_name(name: str) -> str:
     """Lowercase, alphanumeric + underscore, collapsed."""
@@ -41,8 +69,8 @@ def _format_light(template: str, light: dict) -> str:
     """Apply ``template`` to a light's `{name}`, `{type}`, `{channel}` placeholders.
 
     Used to build the inline labels for the DMX submenu's per-light rows.
-    The template comes from ``options.dmx_menu.*_template`` in the active
-    language's translation file; this function only handles substitution.
+    The template comes from ``_DMX_MENU_STRINGS[lang][*_template]``; this
+    function only handles substitution.
     """
     return template.format(
         name=light["name"],
@@ -217,7 +245,7 @@ class ProconipPoolControllerFlowHandler(config_entries.ConfigFlow, domain=DOMAIN
                     ),
                 }
             ),
-            description_placeholders={},
+            description_placeholders={"docs_url": _DOCS_URL},
             errors=_errors,
         )
 
@@ -459,25 +487,17 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_create_entry(data=options)
 
     async def _dmx_menu_strings(self) -> dict[str, str]:
-        """Return the active language's `options.dmx_menu.*` translations.
+        """Return the active language's DMX-submenu labels.
 
         We use the dict-of-dicts ``menu_options`` variant for the DMX
         submenu so that the per-light rows can carry user-chosen slugs in
         their step_ids — but that variant bypasses HA's automatic label
-        translation. So we look up the labels ourselves via
-        ``async_get_translations`` and feed them back as inline labels.
-        Templates with placeholders like ``{name}`` are formatted by
+        translation, and hassfest rejects custom translation keys under
+        ``options``. So the labels live in ``_DMX_MENU_STRINGS`` instead;
+        templates with placeholders like ``{name}`` are formatted by
         ``_format_light``.
         """
-        all_translations = await translation.async_get_translations(
-            self.hass, self.hass.config.language, "options", {DOMAIN}
-        )
-        prefix = f"component.{DOMAIN}.options.dmx_menu."
-        return {
-            key[len(prefix) :]: value
-            for key, value in all_translations.items()
-            if key.startswith(prefix)
-        }
+        return _DMX_MENU_STRINGS.get(self.hass.config.language, _DMX_MENU_STRINGS["en"])
 
     async def async_step_dmx_lights_menu(
         self, user_input: dict[str, Any] | None = None

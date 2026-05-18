@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "description": "Für weitere Hilfe zur Integration siehe hier: https://github.com/ylabonte/proconip-hass",
+                "description": "Für weitere Hilfe zur Integration siehe hier: {docs_url}",
                 "data": {
                     "name": "Instanzname (z.B. 'Whirlpool')",
                     "url": "Controller-Adresse (URL)",
@@ -82,15 +82,6 @@
             "out_of_range": "Kanalbereich überschreitet 16. Wähle einen kleineren Startkanal.",
             "overlap": "Diese Kanäle überschneiden sich mit einem bereits konfigurierten Licht.",
             "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits."
-        },
-        "dmx_menu": {
-            "add_light": "Licht hinzufügen",
-            "remove_light": "Licht entfernen…",
-            "back": "Zurück",
-            "cancel": "Abbrechen",
-            "edit_light_template": "„{name}“ bearbeiten ({type} · Kanal {channel})",
-            "list_light_template": "„{name}“ ({type} · Kanal {channel})",
-            "remove_light_template": "„{name}“ entfernen"
         }
     },
     "entity": {

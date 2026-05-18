@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "description": "If you need help with the configuration have a look here: https://github.com/ylabonte/proconip-hass",
+                "description": "If you need help with the configuration have a look here: {docs_url}",
                 "data": {
                     "name": "Instance name (eg. 'Jacuzzi')",
                     "url": "Controller Address (URL)",
@@ -82,15 +82,6 @@
             "out_of_range": "Channel range exceeds 16. Pick a smaller start channel.",
             "overlap": "These channels overlap with another configured light.",
             "duplicate": "A light with this name (or slug) already exists."
-        },
-        "dmx_menu": {
-            "add_light": "Add light",
-            "remove_light": "Remove a light…",
-            "back": "Back",
-            "cancel": "Cancel",
-            "edit_light_template": "Edit \"{name}\" ({type} · ch {channel})",
-            "list_light_template": "\"{name}\" ({type} · ch {channel})",
-            "remove_light_template": "Remove \"{name}\""
         }
     },
     "entity": {
