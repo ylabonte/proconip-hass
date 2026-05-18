@@ -12,7 +12,10 @@ on:
       - "main"
 
 concurrency:
-  group: validate-${{ github.workflow }}-${{ github.ref }}-${{ github.run_id }}
+  # Stable per workflow + ref so superseded runs for the same branch/PR
+  # are cancelled; including github.run_id would make every group unique
+  # and `cancel-in-progress` ineffective.
+  group: validate-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
