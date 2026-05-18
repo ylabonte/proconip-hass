@@ -21,12 +21,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.13"
+          # 3.14 to match the test matrix and pyproject.toml's mypy
+          # python_version. The HA core source mypy follows uses
+          # 3.14-only syntax (PEP 758 parenthesized except expressions).
+          python-version: "3.14"
           cache: "pip"
           cache-dependency-path: "pyproject.toml"
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        # [dev,test] so the test extra pulls in homeassistant transitively
+        # (via pytest-homeassistant-custom-component) — without it mypy
+        # can't resolve `homeassistant.*` imports.
+        run: pip install -e ".[dev,test]"
 
       - name: Ruff lint
         run: ruff check .

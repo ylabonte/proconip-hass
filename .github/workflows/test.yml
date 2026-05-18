@@ -17,7 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.13"]
+        # 3.14 because pytest-homeassistant-custom-component>=0.13.331 pins
+        # homeassistant>=2026.5.2 which requires Python>=3.14.2. On 3.13 pip
+        # backtracks to an older HA pinned to aiohttp==3.13.3, which then
+        # conflicts with proconip>=2.1.0 (needs aiohttp>=3.13.5).
+        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v6
 
