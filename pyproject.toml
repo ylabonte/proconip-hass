@@ -36,7 +36,7 @@ test = [
     "pytest-homeassistant-custom-component>=0.13.316,<0.14",
     "aioresponses",
     "pytest-freezer",
-    "proconip>=2.0.0",
+    "proconip>=2.1.0",
 ]
 
 [tool.setuptools]
