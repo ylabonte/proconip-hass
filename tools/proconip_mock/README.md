@@ -10,7 +10,7 @@ testing, and integration tests in this repo. **Not** shipped to PyPI.
 From the repo root, with the dev extras installed:
 
 ```bash
-pip install -e ".[dev,test,docs]"
+pip install -e ".[dev,test]"
 python -m tools.proconip_mock
 ```
 

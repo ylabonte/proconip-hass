@@ -57,7 +57,7 @@ Key facts that aren't obvious from a single file:
 
 - **One coordinator per config entry**, stored at `hass.data[DOMAIN][entry.entry_id]`. All platforms read from it. There is no per-entity polling.
 - **Multi-instance is supported.** Every entity's `unique_id` *must* be suffixed with `instance_id` (= `entry.entry_id`) — see how `entity.py` re-prefixes `_attr_unique_id` in `__init__`. Breaking this convention will collide entities when a user runs more than one ProCon.IP (e.g. pool + jacuzzi).
-- **Config entry layout (v1.2):** `entry.data` holds only `CONF_NAME`. `entry.options` holds `CONF_URL`, `CONF_USERNAME`, `CONF_PASSWORD`, `CONF_SCAN_INTERVAL`. `async_migrate_entry` in `__init__.py` rewrites older entries that mixed these. Don't read connection settings from `entry.data` — always use `entry.options`.
+- **Config entry layout:** `entry.data` holds only `CONF_NAME`. `entry.options` holds `CONF_URL`, `CONF_USERNAME`, `CONF_PASSWORD`, `CONF_SCAN_INTERVAL`, and (when configured) `CONF_DMX_LIGHTS`. Don't read connection settings from `entry.data` — always use `entry.options`. The v2.0.0 release dropped the v1 → v1.2 migration code; users on entry layouts from before v1.2.0 (Feb 2024) must upgrade through an older release first.
 - **Dosage relays are special.** Three relay IDs (chlorine / pH-minus / pH-plus) are derived from `GetStateData` each poll and tracked in `coordinator._active_dosage_relays`. They get:
   - hidden by default in the standard relay switch/select/sensor entities (see `is_dosage_relay()` checks),
   - replaced by a `NumberEntity` (`number.py` `ProconipPoolControllerDosageRelayTimer`) that triggers a timed dosage via `DosageControl` and runs a local async countdown for UI feedback,

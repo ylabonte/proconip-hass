@@ -140,8 +140,13 @@ source .venv/bin/activate
   changing the config or options flow. New strings need entries in both.
 - **Don't read connection settings from `entry.data`** — use
   `entry.options`. (`entry.data` only holds `CONF_NAME`.)
-- **Suffix every entity `unique_id` with the config entry ID** (the base
-  class handles this). Multi-instance support depends on it.
+- **Suffix every entity `unique_id` with the config entry ID.**
+  Multi-instance support (one HA, multiple ProCon.IP controllers)
+  depends on it. The current pattern in every entity module is to set
+  `self._attr_unique_id = f"<stable_key>_{instance_id}"` *after*
+  `super().__init__()` — keep that shape rather than relying on the
+  base class to append. (`ProconipPoolControllerEntity` only appends the
+  entry-id suffix when `_attr_unique_id` is still unset by the subclass.)
 
 ## Testing
 
