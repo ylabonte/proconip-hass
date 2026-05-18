@@ -1,10 +1,10 @@
 """Render a `MockState` plus drift into the CSV bodies the controller would emit.
 
 The structural template (column count, names, units, calibration rows, plus the
-SYSINFO header) is loaded once from `tests/fixtures/get_state.csv`. Each render
-substitutes a freshly-computed values row (drifted sensors, current relay
-state) into that template, leaving everything else identical to what a real
-controller would send.
+SYSINFO header) is loaded once from `tests/fixtures/get_state.csv` and cached
+for the lifetime of the process. Each render substitutes a freshly-computed
+values row (drifted sensors, current relay state) into that template, leaving
+everything else identical to what a real controller would send.
 
 Calibration is inverted on the way out: drift functions return values in
 natural units, but the CSV stores them as the raw integers the parser will
@@ -15,6 +15,7 @@ fixture's existing raw value through unchanged for the rest.
 
 from datetime import datetime
 from datetime import time as dt_time
+from functools import lru_cache
 from pathlib import Path
 
 from . import drift
@@ -27,16 +28,25 @@ _COL_TIME = 0
 _COL_CPU_TEMP = 5
 _COL_REDOX = 6
 _COL_PH = 7
-_COL_PUMP_FLOW = 8
+# Column 8 (`Pumpe`, unit °C) is in the controller's temperature category
+# (columns 8–15). Despite the historical "pump flow" framing, the fixture and
+# the parser both treat this as a temperature reading.
+_COL_PUMP_TEMP = 8
 
 _INTERNAL_RELAY_COLUMNS = range(16, 24)  # bits 0–7
 _EXTERNAL_RELAY_COLUMNS = range(28, 36)  # bits 8–15
 
 
+@lru_cache(maxsize=1)
 def _load_template() -> tuple[
     list[str], list[str], list[str], list[float], list[float], list[float]
 ]:
-    """Return the six CSV rows from the fixture as parsed lists."""
+    """Return the six CSV rows from the fixture as parsed lists.
+
+    Cached so repeated `render_get_state` calls don't re-hit disk. Call
+    ``_load_template.cache_clear()`` if you ever need to pick up a fresh
+    fixture (only useful inside tests that rewrite the fixture file).
+    """
     text = GET_STATE_FIXTURE.read_text()
     lines = [line for line in text.splitlines() if line.strip()]
     sysinfo = lines[0].split(",")
@@ -78,8 +88,8 @@ def render_get_state(state: MockState, *, wall_clock: dt_time | None = None) -> 
         sensors["redox_mv"], offsets[_COL_REDOX], gains[_COL_REDOX]
     )
     new_raw[_COL_PH] = _natural_to_raw(sensors["ph"], offsets[_COL_PH], gains[_COL_PH])
-    new_raw[_COL_PUMP_FLOW] = _natural_to_raw(
-        sensors["pump_flow_cm_s"], offsets[_COL_PUMP_FLOW], gains[_COL_PUMP_FLOW]
+    new_raw[_COL_PUMP_TEMP] = _natural_to_raw(
+        sensors["pump_temp_c"], offsets[_COL_PUMP_TEMP], gains[_COL_PUMP_TEMP]
     )
 
     for column in _INTERNAL_RELAY_COLUMNS:
@@ -87,8 +97,14 @@ def render_get_state(state: MockState, *, wall_clock: dt_time | None = None) -> 
     for column in _EXTERNAL_RELAY_COLUMNS:
         new_raw[column] = float(state.csv_relay_value(column - 28 + 8))
 
+    # SYSINFO[5] is the `config_other_enable` bitfield consumed by
+    # `GetStateData.is_*_enabled()`. The template is cached, so emit a
+    # fresh copy with the runtime override applied.
+    sysinfo_row = list(sysinfo)
+    sysinfo_row[5] = str(state.config_other_enable)
+
     rows = [
-        ",".join(sysinfo),
+        ",".join(sysinfo_row),
         ",".join(names),
         ",".join(units),
         ",".join(_format_float(v) for v in offsets),

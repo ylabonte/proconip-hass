@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 
-# Launch the mock ProCon.IP controller (aiohttp-based, drifting sensors +
-# mutable relay/DMX state). Intended for dev use inside the devcontainer
-# so you can exercise the Home Assistant integration end-to-end without
-# owning real hardware.
+# Foreground mock ProCon.IP controller. Logs to stdout. Use this for
+# manual smoke-testing from a terminal; for headless devcontainer
+# auto-start see .devcontainer/start-mock.sh (wired into postStartCommand).
 #
-# Default config: 127.0.0.1:8080, basic auth admin/admin. Override via
-# env vars:
+# Configuration is via environment variables, matching the mock package:
 #
-#   MOCK_HOST=0.0.0.0 MOCK_PORT=9999 MOCK_USER=foo MOCK_PASS=bar scripts/mock-server
+#   PROCONIP_MOCK_HOST=0.0.0.0   # default 127.0.0.1 (loopback only)
+#   PROCONIP_MOCK_PORT=8080
+#   PROCONIP_MOCK_USER=admin
+#   PROCONIP_MOCK_PASS=admin
 #
-# Add an integration entry in Home Assistant pointing at
-# http://127.0.0.1:8080 with admin/admin to talk to this mock.
+# Defaults bind to loopback so the default admin/admin creds aren't
+# exposed to the LAN. Override to 0.0.0.0 only when you need host-side
+# port forwarding or other-container access.
 
 set -e
 
@@ -19,10 +21,10 @@ cd "$(dirname "$0")/.."
 
 PYTHON=".venv/bin/python"
 
-# When the devcontainer task runs this on folderOpen, postCreateCommand
-# (scripts/setup) may still be installing into .venv. Wait up to ~3
-# minutes for aiohttp to appear before exec'ing — otherwise we'd crash
-# with ModuleNotFoundError.
+# When the devcontainer's postStartCommand fires this on container
+# start, postCreateCommand (scripts/setup) may still be installing into
+# .venv. Wait up to ~3 minutes for aiohttp to appear before exec'ing —
+# otherwise we'd crash with ModuleNotFoundError.
 WAIT_SECONDS=180
 WAITED=0
 while ! [ -x "$PYTHON" ] || ! "$PYTHON" -c "import aiohttp" >/dev/null 2>&1; do
@@ -38,8 +40,4 @@ while ! [ -x "$PYTHON" ] || ! "$PYTHON" -c "import aiohttp" >/dev/null 2>&1; do
     WAITED=$((WAITED + 2))
 done
 
-exec "$PYTHON" -m tools.proconip_mock \
-    --host "${MOCK_HOST:-127.0.0.1}" \
-    --port "${MOCK_PORT:-8080}" \
-    --username "${MOCK_USER:-admin}" \
-    --password "${MOCK_PASS:-admin}"
+exec "$PYTHON" -m tools.proconip_mock

@@ -20,11 +20,31 @@ NUM_DMX_CHANNELS = 16
 
 @dataclass
 class MockState:
-    """Snapshot of every mutable controller state the mock cares about."""
+    """Snapshot of every mutable controller state the mock cares about.
+
+    The ``config_other_enable`` field is rendered into row 1 (SYSINFO) of
+    ``/GetState.csv`` and gates the client-side feature flags exposed by
+    `proconip.definitions.GetStateData`. Bit layout (from `definitions.py`):
+
+    - bit 0 (1)   — TCP/IP boost
+    - bit 1 (2)   — SD card logging
+    - bit 2 (4)   — DMX
+    - bit 3 (8)   — Avatar
+    - bit 4 (16)  — Relay extension (internal + external relays)
+    - bit 5 (32)  — High bus load
+    - bit 6 (64)  — Flow sensor
+    - bit 7 (128) — Repeated mails
+    - bit 8 (256) — DMX extension
+
+    Default is 0 so the mock's emitted CSV stays byte-compatible with
+    ``tests/fixtures/get_state.csv``; client code that depends on a flag
+    constructs ``MockState(config_other_enable=…)`` to turn it on.
+    """
 
     relay_enabled: list[bool] = field(default_factory=lambda: [False] * NUM_RELAY_BITS)
     relay_on: list[bool] = field(default_factory=lambda: [False] * NUM_RELAY_BITS)
     dmx: list[int] = field(default_factory=lambda: [0] * NUM_DMX_CHANNELS)
+    config_other_enable: int = 0
     monotonic: Callable[[], float] = field(default=time.monotonic)
     _t0: float = field(init=False)
 
@@ -50,11 +70,18 @@ class MockState:
     def csv_relay_value(self, bit: int) -> int:
         """Encode the relay's state as the 0–3 value the controller emits.
 
-        - 0 = Auto (off)
-        - 1 = Auto (on)  ← never produced by the mock; we don't simulate
-              automation, so manual-off becomes 2 and so on.
-        - 2 = Off (manual)
-        - 3 = On (manual)
+        Both bits independently follow the incoming ENA payload, so all four
+        combinations are reachable:
+
+        - 0 = Auto (off)  ``relay_enabled=False, relay_on=False``
+        - 1 = Auto (on)   ``relay_enabled=False, relay_on=True``
+        - 2 = Off         ``relay_enabled=True,  relay_on=False``
+        - 3 = On          ``relay_enabled=True,  relay_on=True``
+
+        The mock starts at all-zero and there's no internal scheduler that
+        would set `Auto on`, but a client preserving an existing relay state
+        via `GetStateData.determine_overall_relay_bit_state()` may legitimately
+        POST `ENA=0,1<<bit`, which lands here as 1.
         """
         manual = self.relay_enabled[bit]
         on = self.relay_on[bit]

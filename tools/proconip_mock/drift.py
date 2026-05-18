@@ -1,6 +1,6 @@
 """Pure functions producing slow, realistic drift on the mock controller's sensors.
 
-All values are returned in **natural units** (pH units, mV, °C, cm/s). The CSV
+All values are returned in **natural units** (pH units, mV, °C). The CSV
 renderer is responsible for converting them back to the raw integers the
 controller would emit, applying the inverse of `(raw * gain) + offset`.
 
@@ -24,9 +24,9 @@ CPU_TEMP_CENTER_C = 30.0
 CPU_TEMP_AMPLITUDE_C = 2.0
 CPU_TEMP_PERIOD_SECONDS = 1800.0
 
-PUMP_FLOW_CENTER_CM_S = 7.0
-PUMP_FLOW_AMPLITUDE_CM_S = 0.3
-PUMP_FLOW_PERIOD_SECONDS = 60.0
+PUMP_TEMP_CENTER_C = 27.0
+PUMP_TEMP_AMPLITUDE_C = 1.0
+PUMP_TEMP_PERIOD_SECONDS = 1800.0
 
 
 def _phase(elapsed_seconds: float, period_seconds: float) -> float:
@@ -50,10 +50,18 @@ def cpu_temp_c(elapsed_seconds: float) -> float:
     )
 
 
-def pump_flow_cm_s(elapsed_seconds: float) -> float:
-    """Drifted pump flow speed in cm/s (6.7–7.3 band)."""
-    return PUMP_FLOW_CENTER_CM_S + PUMP_FLOW_AMPLITUDE_CM_S * _phase(
-        elapsed_seconds, PUMP_FLOW_PERIOD_SECONDS
+def pump_temp_c(elapsed_seconds: float) -> float:
+    """Drifted temperature for the pump-mounted sensor (°C, 26–28 °C band).
+
+    The fixture's column 8 is labeled ``Pumpe`` with unit ``C`` — the
+    controller categorizes columns 8–15 as temperature sensors. Most pool
+    installations wire a flow/water temperature probe here, so a typical
+    pool-water range is the sensible drift target. Real deployments may
+    instead measure pump-motor temperature on this channel; the mock's
+    range is wide enough that either reading looks plausible at a glance.
+    """
+    return PUMP_TEMP_CENTER_C + PUMP_TEMP_AMPLITUDE_C * _phase(
+        elapsed_seconds, PUMP_TEMP_PERIOD_SECONDS
     )
 
 
@@ -76,5 +84,5 @@ def sensors(elapsed_seconds: float) -> dict[str, float]:
         "ph": ph(elapsed_seconds),
         "redox_mv": redox_mv(elapsed_seconds),
         "cpu_temp_c": cpu_temp_c(elapsed_seconds),
-        "pump_flow_cm_s": pump_flow_cm_s(elapsed_seconds),
+        "pump_temp_c": pump_temp_c(elapsed_seconds),
     }

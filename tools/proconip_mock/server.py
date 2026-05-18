@@ -59,25 +59,36 @@ async def _get_dmx(request: web.Request) -> web.Response:
 
 async def _usrcfg(request: web.Request) -> web.Response:
     state = request.app[STATE_KEY]
-    body = await request.text()
-    fields = _parse_form(body)
+    # aiohttp's request.post() handles `application/x-www-form-urlencoded`
+    # to spec (percent-decoding, `+` → space, repeated keys), matching what
+    # a real controller's form parser would do.
+    fields = await request.post()
 
+    # No raw form value is ever passed to a log call. Failures are logged as
+    # the exception class name, successes log values that have already passed
+    # through int()/== — CodeQL recognizes both as sanitization boundaries
+    # for `py/log-injection`.
     if "ENA" in fields:
         try:
-            enable_str, on_str = fields["ENA"].split(",", 1)
-            state.apply_ena(enable_mask=int(enable_str), on_mask=int(on_str))
+            enable_str, on_str = str(fields["ENA"]).split(",", 1)
+            enable_mask = int(enable_str)
+            on_mask = int(on_str)
         except (ValueError, KeyError) as exc:
-            return web.Response(status=400, text=f"Invalid ENA payload: {exc}")
-        _LOG.info("relay update: ENA=%s MANUAL=%s", fields["ENA"], fields.get("MANUAL"))
+            _LOG.warning("invalid ENA payload (%s)", type(exc).__name__)
+            return web.Response(status=400, text="Invalid ENA payload")
+        state.apply_ena(enable_mask=enable_mask, on_mask=on_mask)
+        manual = str(fields.get("MANUAL", "")) == "1"
+        _LOG.info("relay update: ENA=%d,%d MANUAL=%s", enable_mask, on_mask, manual)
         return web.Response(text="OK")
 
     if "CH1_8" in fields and "CH9_16" in fields:
         try:
-            ch_low = [int(v) for v in fields["CH1_8"].split(",")]
-            ch_high = [int(v) for v in fields["CH9_16"].split(",")]
+            ch_low = [int(v) for v in str(fields["CH1_8"]).split(",")]
+            ch_high = [int(v) for v in str(fields["CH9_16"]).split(",")]
             state.apply_dmx(channels_1_8=ch_low, channels_9_16=ch_high)
         except ValueError as exc:
-            return web.Response(status=400, text=f"Invalid DMX payload: {exc}")
+            _LOG.warning("invalid DMX payload (%s)", type(exc).__name__)
+            return web.Response(status=400, text="Invalid DMX payload")
         _LOG.info("dmx update: %s", state.dmx)
         return web.Response(text="OK")
 
@@ -88,18 +99,15 @@ async def _command(request: web.Request) -> web.Response:
     dosage = request.query.get("MAN_DOSAGE")
     if dosage is None:
         return web.Response(status=400, text="Missing MAN_DOSAGE query parameter")
-    _LOG.info("manual dosage: %s", dosage)
+    try:
+        target_str, duration_str = dosage.split(",", 1)
+        target = int(target_str)
+        duration = int(duration_str)
+    except ValueError as exc:
+        _LOG.warning("invalid MAN_DOSAGE (%s)", type(exc).__name__)
+        return web.Response(status=400, text="Invalid MAN_DOSAGE payload")
+    _LOG.info("manual dosage: target=%d duration=%d", target, duration)
     return web.Response(text="OK")
-
-
-def _parse_form(body: str) -> dict[str, str]:
-    fields: dict[str, str] = {}
-    for chunk in body.split("&"):
-        if not chunk:
-            continue
-        key, _, value = chunk.partition("=")
-        fields[key] = value
-    return fields
 
 
 def create_app(
