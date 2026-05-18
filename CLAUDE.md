@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Home Assistant **custom integration** (HACS-distributed) for the [ProCon.IP pool controller](https://www.pooldigital.de). The integration code lives in `custom_components/proconip_pool_controller/` and follows the [@ludeeus/integration_blueprint](https://github.com/ludeeus/integration_blueprint) pattern.
 
-All HTTP/CSV parsing and relay/dosage commands are delegated to the **`proconip` PyPI package** (declared in `manifest.json` requirements as `proconip>=2.1.0`). When a question is about *what data exists* or *how a call works*, the answer is in that library, not here:
+All HTTP/CSV parsing, relay/dosage commands, and DMX read/writes are delegated to the **`proconip` PyPI package** (declared in `manifest.json` requirements as `proconip>=2.1.0`). When a question is about *what data exists* or *how a call works*, the answer is in that library, not here:
 
 - Source: https://github.com/ylabonte/proconip-pypi
 - Docs: https://ylabonte.github.io/proconip-pypi/
@@ -42,15 +42,15 @@ CI also runs **hassfest** (`home-assistant/actions/hassfest`) and **HACS validat
 Data flow for one config entry (one ProCon.IP device):
 
 ```
-proconip lib (GetState/RelaySwitch/DosageControl)
+proconip lib (GetState / GetDmx / RelaySwitch / DosageControl / DmxControl)
         ↑
 api.py (ProconipApiClient)            ← thin wrapper, owns aiohttp session
         ↑
-coordinator.py (DataUpdateCoordinator) ← single poll → GetStateData
+coordinator.py (DataUpdateCoordinator) ← poll → GetStateData; DMX shadow + debounced flush
         ↑
 entity.py (ProconipPoolControllerEntity) ← CoordinatorEntity base, sets DeviceInfo
         ↑
-binary_sensor.py / sensor.py / switch.py / select.py / number.py
+binary_sensor.py / sensor.py / switch.py / select.py / number.py / light.py
 ```
 
 Key facts that aren't obvious from a single file:
@@ -69,7 +69,7 @@ Key facts that aren't obvious from a single file:
 
 - `const.py` — `DOMAIN`, `NAME`, `VERSION` (kept in sync with `manifest.json` `version`), `LOGGER`, `ATTRIBUTION`.
 - `translations/en.json`, `translations/de.json` — config-flow strings. Keep both in sync when changing the flow.
-- **`light.py` is dormant scaffold code, not wired up.** It is *not* in the `PLATFORMS` list in `__init__.py` and currently won't import (it references `GET_STATE_DATA` / `GET_DMX_DATA` symbols that don't exist in `coordinator.py`, and has a stray `from sqlalchemy import null`). Treat it as a TODO for future DMX-light support, not as a working reference. If touching it, fix the imports and add `Platform.LIGHT` to `PLATFORMS`.
+- **`light.py` implements DMX lights** (dimmer / RGB / RGBW) backed by the coordinator's DMX shadow. Each entity reads from `coordinator.dmx_shadow`, writes via `_write_channels`, and triggers `coordinator.schedule_dmx_flush()` — a debounced batch write so quick slider drags coalesce into one `DmxControl` POST. Lights are configured via the options-flow DMX submenu (`CONF_DMX_LIGHTS`), gated on `GetStateData.is_dmx_enabled()`. `Platform.LIGHT` is in `PLATFORMS`.
 
 ## Coding conventions
 
@@ -95,7 +95,7 @@ Releases are fully automated by [release-please](https://github.com/googleapis/r
 
 **Don't:** hand-edit `manifest.json:version` or `const.py:VERSION`. Both are owned by release-please's `extra-files` config. The marker comment on the `VERSION` line must stay verbatim.
 
-**Do:** bump `hacs.json:homeassistant` minimum if you start using newer HA APIs. Current minimum: **HA 2024.2.1**, Python **3.13+** (see devcontainer image `python:dev-3.14` and `pyproject.toml:requires-python`).
+**Do:** bump `hacs.json:homeassistant` minimum if you start using newer HA APIs. Current minimum: **HA 2026.5.2**, Python **3.14+** (the HA pin comes from `proconip>=2.1.0` needing `aiohttp>=3.13.5`, first satisfied by HA 2026.5.x; CI matrix also runs Python 3.14 — see devcontainer image `python:dev-3.14` and `pyproject.toml:requires-python`).
 
 ### Conventional Commits — when to bump, when to be silent
 

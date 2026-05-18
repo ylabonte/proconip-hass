@@ -7,7 +7,9 @@ Default bind is **127.0.0.1** — the mock listens only on the loopback
 interface, so the default `admin`/`admin` credentials aren't reachable from
 the LAN. Environments that need external access (devcontainer port
 forwarding, Codespaces) override this to `0.0.0.0` via
-``PROCONIP_MOCK_HOST`` in ``.devcontainer/devcontainer.json``.
+``PROCONIP_MOCK_HOST`` in the devcontainer config (root-level
+``.devcontainer.json`` in ``proconip-hass``;
+``.devcontainer/devcontainer.json`` in ``proconip-pypi``).
 
 Feature flags map onto SYSINFO[5] (the controller's ``config_other_enable``
 bitfield) so client-side checks like ``is_dmx_enabled()`` see the intended

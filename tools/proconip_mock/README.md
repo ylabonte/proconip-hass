@@ -94,5 +94,7 @@ curl -u admin:admin -X POST \
 curl -u admin:admin http://localhost:8080/GetDmx.csv
 ```
 
-The `.devcontainer/devcontainer.json` already sets `PROCONIP_MOCK_DMX=1`
-in `remoteEnv`, so containers default to DMX-on for development.
+The devcontainer config already sets `PROCONIP_MOCK_DMX=1` in
+`remoteEnv` (root-level `.devcontainer.json` in `proconip-hass`;
+`.devcontainer/devcontainer.json` in `proconip-pypi`), so containers
+default to DMX-on for development.
