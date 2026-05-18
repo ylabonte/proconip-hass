@@ -2,18 +2,11 @@
 version: 2
 
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    assignees:
-      - ylabonte
-    commit-message:
-      prefix: "ci"
-    groups:
-      actions:
-        patterns:
-          - "*"
+  # GitHub Actions updates are handled by .github/workflows/update-actions.yml
+  # (using ylabonte/github-actions-updater) — we dogfood that action rather
+  # than letting Dependabot manage action versions. If you re-enable a
+  # `package-ecosystem: github-actions` block here, drop the workflow
+  # alongside it to avoid duplicate PRs.
 
   - package-ecosystem: "pip"
     directory: "/"

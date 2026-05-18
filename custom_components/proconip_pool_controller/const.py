@@ -6,7 +6,7 @@ LOGGER: Logger = getLogger(__package__)
 
 NAME = "ProCon.IP Pool Controller"
 DOMAIN = "proconip_pool_controller"
-VERSION = "2.0.0"
+VERSION = "1.2.0"  # x-release-please-version
 ATTRIBUTION = "Data provided by your Pool Digital ProCon.IP (https://www.pooldigital.de)"
 
 # DMX

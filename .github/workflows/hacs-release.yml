@@ -1,0 +1,45 @@
+name: HACS Release
+
+# Fires when release-please's "release: published" event lands (App
+# token authoring the release makes this trigger fire — see the
+# comment in release.yml).
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+  lint:
+    uses: ./.github/workflows/lint.yml
+
+  attach-zip:
+    name: Attach HACS zip
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # Stash GitHub-controlled inputs in env so they never get interpolated
+    # into a shell context — defensive even though `ref:` and `files:`
+    # are action parameters, not run: commands.
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Checkout the released tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Zip the integration directory
+        shell: bash
+        run: |
+          cd custom_components/proconip_pool_controller
+          zip -r ../../proconip_pool_controller.zip ./
+
+      - name: Upload the zip to the release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: proconip_pool_controller.zip

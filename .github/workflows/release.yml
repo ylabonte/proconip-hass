@@ -1,42 +1,35 @@
-name: "Release"
+name: Release
 
 on:
-  release:
-    types:
-      - "published"
+  push:
+    branches: [main]
 
-permissions: {}
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  test:
-    uses: ./.github/workflows/test.yml
-
-  lint:
-    uses: ./.github/workflows/lint.yml
-
-  release:
-    name: "Release"
-    needs: [test, lint]
-    runs-on: "ubuntu-latest"
-    permissions:
-      contents: write
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
     steps:
-      - name: "Checkout the repository"
-        uses: actions/checkout@v6
-
-      - name: "Adjust version number"
-        shell: "bash"
-        run: |
-          yq -i -o json '.version="${{ github.event.release.tag_name }}"' \
-            "${{ github.workspace }}/custom_components/proconip_pool_controller/manifest.json"
-
-      - name: "ZIP the integration directory"
-        shell: "bash"
-        run: |
-          cd "${{ github.workspace }}/custom_components/proconip_pool_controller"
-          zip proconip_pool_controller.zip -r ./
-
-      - name: "Upload the ZIP file to the release"
-        uses: softprops/action-gh-release@v3
+      # Authenticate as our GitHub App so the Release PR commits, the
+      # tag, and the GitHub Release created by release-please are
+      # App-authored — that's what allows downstream workflows
+      # (hacs-release.yml on `release: published`) to fire. The default
+      # GITHUB_TOKEN cannot trigger other workflows by design.
+      - uses: actions/create-github-app-token@v3
+        id: app-token
         with:
-          files: ${{ github.workspace }}/custom_components/proconip_pool_controller/proconip_pool_controller.zip
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - uses: googleapis/release-please-action@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: .release-please-config.json
+          manifest-file: .release-please-manifest.json
