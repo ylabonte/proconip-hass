@@ -247,6 +247,56 @@ async def test_options_flow_shows_dmx_entry_when_orphan_lights_exist(
     assert "dmx_lights_menu" in result["menu_options"]
 
 
+async def test_dmx_light_edit_persists_changes_without_duplicating(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """Editing an existing DMX light updates it in place (same slug, new fields).
+
+    The dispatcher creates `async_step_dmx_light_edit_<slug>` on the fly
+    via `__getattr__`; this exercises that path end-to-end and confirms
+    the saved light list keeps a single entry with the edited values.
+    """
+    entry = setup_integration
+    _seed_one_light(hass, entry)
+    result_menu = await _open_dmx_lights_menu(hass, entry)
+
+    # Pick the dynamically-dispatched edit step for the seeded light.
+    edit_step_id = "dmx_light_edit_pool_main"
+    assert edit_step_id in result_menu["menu_options"]
+    result_edit_form = await hass.config_entries.options.async_configure(
+        result_menu["flow_id"], user_input={"next_step_id": edit_step_id}
+    )
+    assert result_edit_form["type"] is FlowResultType.FORM
+    assert result_edit_form["step_id"] == edit_step_id
+
+    # Change name + type + start_channel. RGB (3 channels) starting at 4
+    # → uses channels 4-6, doesn't collide with the seeded layout's footprint.
+    result_after_save = await hass.config_entries.options.async_configure(
+        result_edit_form["flow_id"],
+        user_input={"name": "Pool main renamed", "type": "rgb", "start_channel": 4},
+    )
+    # Saving an edit bounces back to the lights menu.
+    assert result_after_save["type"] is FlowResultType.MENU
+
+    # Finalise the options flow so the entry's options are persisted.
+    result_back = await hass.config_entries.options.async_configure(
+        result_after_save["flow_id"], user_input={"next_step_id": "init"}
+    )
+    await hass.config_entries.options.async_configure(
+        result_back["flow_id"], user_input={"next_step_id": "save_and_finish"}
+    )
+    await hass.async_block_till_done()
+
+    saved = entry.options[CONF_DMX_LIGHTS]
+    assert len(saved) == 1, f"Expected exactly one light after edit; got: {saved}"
+    assert saved[0]["slug"] == "pool_main", "slug must be preserved across an edit"
+    assert saved[0]["name"] == "Pool main renamed"
+    assert saved[0]["type"] == "rgb"
+    assert saved[0]["start_channel"] == 4
+
+
 async def test_dmx_lights_menu_includes_remove_when_lights_exist(
     hass: HomeAssistant,
     setup_integration: MockConfigEntry,
