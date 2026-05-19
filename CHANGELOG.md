@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > auto-generated entry can be merged into or replaced with the
 > `[Unreleased]` content below before the PR ships.
 
+## [2.0.0](https://github.com/ylabonte/proconip-hass/compare/v1.2.0...v2.0.0) (2026-05-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* v2.0.0 — major refactor + DMX light support ([#72](https://github.com/ylabonte/proconip-hass/issues/72))
+
+### Features
+
+* v2.0.0 — major refactor + DMX light support ([#72](https://github.com/ylabonte/proconip-hass/issues/72)) ([7e0449c](https://github.com/ylabonte/proconip-hass/commit/7e0449c59c2669377de02e1008de1face983ac58))
+
+
+### Bug Fixes
+
+* Add sensors entities for relays of the optional extension module ([a2e0700](https://github.com/ylabonte/proconip-hass/commit/a2e070053e39335c48b615f7c77f8cf4b220fc8c))
+
 ## [Unreleased]
 
 ### Breaking changes
