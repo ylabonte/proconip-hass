@@ -149,9 +149,9 @@ Releases are fully automated by [release-please](https://github.com/googleapis/r
 - **Runtime minimum (what shipped users need): HA 2025.2.0, Python 3.13+.** That's the floor declared in `hacs.json` and `manifest.json` (`proconip>=2.1.1`). HA 2025.2.0 is the first release that required Python 3.13 (which `proconip` itself requires); its bundled `aiohttp` 3.11.x easily satisfies `proconip>=2.1.1`'s relaxed `aiohttp>=3.10` floor.
 - **Dev / CI minimum: Python 3.14.** Higher than the runtime floor because `pytest-homeassistant-custom-component` pulls in current HA Core (2026.5+) which itself requires 3.14.2+. See `.github/workflows/test.yml`, `.github/workflows/lint.yml`, `scripts/setup`, and the devcontainer image `python:dev-3.14`. `pyproject.toml` mypy sits on 3.14 for the same reason (mypy follows imports into HA's source, which uses PEP 758 syntax). `ruff target-version = "py313"` is what actually enforces our own source stays valid on 3.13.
 
-### Conventional Commits — when to bump, when to be silent
+### Conventional Commits — type → release-please behaviour
 
-**Default behavior on every code-changing task:** at commit-write time, decide the conventional-commit `type` from the table below. **If the type would trigger a release entry, ask the user to confirm subject + type before committing.** For silent types (`ci`/`chore`/`test`/etc.) commit without asking.
+The **Working style** rule above already requires `AskUserQuestion` before *any* commit — including `ci:` / `chore:` / `test:`. This section is about picking the right `type` (and writing a clean subject), not about whether to confirm. Always show the planned `<type>(<scope>): <subject>` line and the file list in the confirmation prompt.
 
 | Type | Trigger release? | Visible in CHANGELOG? | Use when |
 |---|---|---|---|
@@ -167,24 +167,16 @@ Releases are fully automated by [release-please](https://github.com/googleapis/r
 | `ci` | none | hidden | anything under `.github/` or release workflows |
 | `chore` | none | hidden | catch-all: lockfile bumps, formatting, devcontainer/scripts/tools |
 
-**Silent-by-default paths** (commit with `ci:` / `chore:` / `test:` / `docs:` as appropriate, no question asked):
+**Take extra care with subject + type** when the change touches:
 
-- `.github/`, `.devcontainer/`, `.vscode/`
-- `scripts/`, `tools/`
-- `tests/`, `pyproject.toml` test/lint config, `.pre-commit-config.yaml`
-- `CLAUDE.md`, `CONTRIBUTING.md`, `README.md`, comments, docstrings
-- Pure formatting, type-only refactors
+- `custom_components/proconip_pool_controller/**` non-trivially (any new/changed/removed entity, config-flow change, user-visible string, behaviour change) → `feat` / `feat!` / `fix` / `perf`, never `chore` / `refactor`
+- `manifest.json` (other than the release-please-owned `version` field) → `fix(deps)` or `feat`
+- `translations/*.json` for user-visible labels → `feat` / `fix` depending on whether it's a new vs. corrected label
+- Dependency version constraints → `fix(deps)` / `feat(deps)`
 
-**Always ask before committing** when the change touches:
-
-- `custom_components/proconip_pool_controller/**` non-trivially (any new/changed/removed entity, config-flow change, user-visible string, behaviour change)
-- `manifest.json` (other than the release-please-owned `version` field)
-- `translations/*.json` for user-visible labels
-- Dependency version constraints
+These touch user-visible behaviour or the changelog, so the wrong `type` files an entry in the wrong section (or no entry at all). Borderline? Pick the higher-visibility type and call it out in the AskUserQuestion confirmation so the user can downgrade if they disagree.
 
 **Mixed-change PR rule:** split into separate commits with the right types. Don't describe a CI tweak in a `feat:` commit — release-please would file the wrong section.
-
-**When in doubt, ask the user.** Never silently choose `chore:` for a borderline case.
 
 ### Post-release follow-up: HACS default-list submission
 
