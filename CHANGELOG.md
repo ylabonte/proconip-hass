@@ -53,5 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0] — 2024-02-12
 
-See `README.md` (Changelog section) for entries prior to the introduction of
-this file.
+For release notes prior to the introduction of this file (v1.2.0 and
+earlier), see the
+[GitHub releases archive](https://github.com/ylabonte/proconip-hass/releases?q=prerelease%3Afalse&expanded=true).
