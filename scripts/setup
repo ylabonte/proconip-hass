@@ -53,16 +53,20 @@ echo "==> Using $PYTHON ($("$PYTHON" --version))"
 # can't be removed with rm because the mount point itself is busy. `--clear`
 # wipes only the contents and recreates the venv structure inside.
 #
-# Rebuild when ANY of: no usable interpreter, broken interpreter, or
-# interpreter major.minor does not match the just-selected $PYTHON.
-# That last check matters when contributors upgrade Python on the host
-# (or move from 3.13 → 3.14) but kept their existing .venv: dep
-# resolution will fail otherwise, with a confusing pip error instead
-# of an obvious "rebuilt for new Python" log line.
+# Rebuild when ANY of: no usable interpreter, broken interpreter,
+# interpreter below the >=3.14.2 floor, or interpreter major.minor does
+# not match the just-selected $PYTHON. The micro check matters because
+# an existing .venv built with 3.14.0/3.14.1 looks fine on a major.minor
+# comparison against `python3.14`, but [dev,test] dep resolution against
+# current HA Core will fail later with a confusing pip error.
 NEEDS_REBUILD=
 if [ ! -x .venv/bin/python ] || ! .venv/bin/python --version >/dev/null 2>&1; then
     NEEDS_REBUILD=1
     REBUILD_REASON="missing/broken interpreter"
+elif ! python_is_supported .venv/bin/python; then
+    VENV_FULL="$(.venv/bin/python -c 'import sys; print(sys.version.split()[0])' 2>/dev/null || echo unknown)"
+    NEEDS_REBUILD=1
+    REBUILD_REASON="existing .venv uses Python $VENV_FULL, setup requires >= 3.14.2"
 else
     VENV_VER="$(.venv/bin/python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null)"
     PY_VER="$("$PYTHON" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null)"
