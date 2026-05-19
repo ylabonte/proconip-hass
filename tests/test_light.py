@@ -178,6 +178,58 @@ async def test_rgb_brightness_only_preserves_hue_and_targets_max_channel(
     assert (r, g, b) == (180, 90, 45)
 
 
+async def test_rgbw_brightness_only_preserves_hue_and_targets_max_channel(
+    hass: HomeAssistant,
+    dmx_lights_entry: MockConfigEntry,
+    mock_state_endpoint_dmx_on: aioresponses,
+    mock_dmx_endpoint: aioresponses,
+) -> None:
+    """Same as the RGB test, but for the 4-channel RGBW path.
+
+    Regression: naive ``value * brightness / 255`` would compound-dim across
+    slider adjustments; the fix scales by ``brightness / max(channels)``
+    instead, so the brightest of (r,g,b,w) matches the requested level.
+    """
+    assert await hass.config_entries.async_setup(dmx_lights_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][dmx_lights_entry.entry_id]
+    coordinator.client.async_set_dmx = AsyncMock(return_value="OK")
+
+    # Seed the shadow so entities are available and assertions are unconditional.
+    coordinator._dmx_shadow = await coordinator.client.async_get_dmx()
+
+    target = next(eid for eid in hass.states.async_entity_ids("light") if "pool_rgbw" in eid)
+    # First set a colour whose max channel is 200 (not 255). White is leading.
+    await hass.services.async_call(
+        "light",
+        SERVICE_TURN_ON,
+        {"entity_id": target, "rgbw_color": [100, 50, 25, 200]},
+        blocking=True,
+    )
+    await asyncio.sleep(DMX_DEBOUNCE_SECONDS + 0.1)
+    shadow = coordinator.dmx_shadow
+    # RGBW light's start_channel is 5 → DMX indexes 4-7.
+    assert (shadow[4].value, shadow[5].value, shadow[6].value, shadow[7].value) == (
+        100,
+        50,
+        25,
+        200,
+    )
+
+    # Brightness-only adjustment. Max channel should land on 160, the rest
+    # scale proportionally (160/200 = 0.8 → r=80, g=40, b=20, w=160).
+    await hass.services.async_call(
+        "light",
+        SERVICE_TURN_ON,
+        {"entity_id": target, "brightness": 160},
+        blocking=True,
+    )
+    await asyncio.sleep(DMX_DEBOUNCE_SECONDS + 0.1)
+    r, g, b, w = shadow[4].value, shadow[5].value, shadow[6].value, shadow[7].value
+    assert max(r, g, b, w) == 160
+    assert (r, g, b, w) == (80, 40, 20, 160)
+
+
 async def test_rgbw_turn_off(
     hass: HomeAssistant,
     dmx_lights_entry: MockConfigEntry,
