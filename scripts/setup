@@ -4,10 +4,11 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-# Pick the newest Python >= 3.14 we can find. 3.14 is our effective floor
-# because HA Core 2026.5.x requires it and the test/dev deps backtrack into
-# resolution failures on 3.13 (HA 2026.5 pins aiohttp 3.13.5; proconip>=2.1
-# also needs 3.13.5; older HA can't satisfy both). Override with
+# Pick the newest Python >= 3.14 we can find. 3.14 is our *dev/CI* floor
+# (not the runtime floor — shipped users only need 3.13). The reason it's
+# 3.14 here: this script installs the [dev,test] extras, which pull in
+# pytest-homeassistant-custom-component → current HA Core (2026.5+) → which
+# itself requires Python >= 3.14.2. Override with
 # `PYTHON=python3.X scripts/setup` if you know what you are doing.
 if [ -z "${PYTHON:-}" ]; then
     for candidate in python3.14 python3; do
