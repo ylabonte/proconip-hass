@@ -5,17 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-> **Note on the changelog process:** from the next release onward,
-> [release-please](https://github.com/googleapis/release-please) owns
-> this file — entries are auto-generated from Conventional Commits on
-> `main`. The `[Unreleased]` block below is a hand-curated summary of
-> everything staged for `v2.0.0` (the first release-please-managed
-> release). When this branch lands on `main` with a `feat!:` squash-
-> merge subject, release-please will open a "release: 2.0.0" PR; the
-> auto-generated entry can be merged into or replaced with the
-> `[Unreleased]` content below before the PR ships.
-
-## [Unreleased]
+## [2.0.0](https://github.com/ylabonte/proconip-hass/compare/v1.2.0...v2.0.0) (2026-05-19)
 
 ### Breaking changes
 
