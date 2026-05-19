@@ -1,8 +1,13 @@
 name: Test
 
 on:
+  # Restrict push to `main` so PR pushes don't fire both push *and*
+  # pull_request events (which used to double-run lint/test on every
+  # commit to a PR branch). Mirrors validate.yml + codeql.yml.
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
   workflow_call:
 
 concurrency:
