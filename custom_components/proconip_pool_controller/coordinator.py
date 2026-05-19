@@ -166,20 +166,37 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
             return
         if self._dmx_shadow is None:
             return
-        async with self._dmx_flush_lock:
+
+        # We acquire the lock manually (rather than `async with`) so that on
+        # a mid-write cancellation we can keep the lock held until the
+        # orphaned, shielded write actually completes. Using a context
+        # manager here would release the lock the instant we `return` out
+        # of the cancel handler, letting the next scheduled flush acquire
+        # it and start a second concurrent POST — exactly the race the
+        # lock exists to prevent.
+        try:
+            await self._dmx_flush_lock.acquire()
+        except asyncio.CancelledError:
+            return
+
+        deferred_release = False
+        try:
             # Shield the POST from a subsequent `schedule_dmx_flush()` that
             # cancels this task: cancelling mid-request would tear the
             # aiohttp exchange down and leave the controller looking at a
             # half-sent payload. We let the in-flight write run to
-            # completion on the loop; if we're cancelled, we just stop
-            # awaiting it and the next debounced flush sends the latest
-            # shadow.
+            # completion on the loop; on cancel we just stop awaiting it
+            # and the next debounced flush sends the latest shadow.
             write_task = asyncio.ensure_future(self.client.async_set_dmx(self._dmx_shadow))
             try:
                 await asyncio.shield(write_task)
             except asyncio.CancelledError:
-                # Detach: any later exception is intentional spilled milk.
-                write_task.add_done_callback(_consume_orphaned_dmx_write_error)
+                # The shielded write keeps running. Defer the lock release
+                # to a done-callback on that orphan so the next scheduled
+                # flush waits behind it — preserves the mutual exclusion
+                # the lock was meant to guarantee.
+                write_task.add_done_callback(self._release_lock_after_orphaned_write)
+                deferred_release = True
                 return
             except (
                 BadStatusCodeException,
@@ -189,6 +206,20 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
                 LOGGER.warning("DMX flush failed: %s", exception)
                 return
             self._dmx_last_write = datetime.now(tz=UTC)
+        finally:
+            if not deferred_release:
+                self._dmx_flush_lock.release()
+
+    def _release_lock_after_orphaned_write(self, task: asyncio.Task[Any]) -> None:
+        """Done-callback: consume any orphaned write error, then release the lock.
+
+        Installed by `_flush_dmx` when a cancellation leaves a shielded
+        `async_set_dmx` POST running on the loop. The next scheduled flush
+        is parked on `_dmx_flush_lock.acquire()` until this callback fires,
+        which guarantees no two POSTs ever overlap on the wire.
+        """
+        _consume_orphaned_dmx_write_error(task)
+        self._dmx_flush_lock.release()
 
     async def async_shutdown(self) -> None:
         """Cancel pending DMX flush on entry unload."""

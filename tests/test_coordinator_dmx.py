@@ -168,6 +168,67 @@ async def test_dmx_shadow_cleared_when_controller_disables_dmx(
     assert coordinator.dmx_shadow is None
 
 
+async def test_concurrent_dmx_writes_serialized_even_after_cancellation(
+    hass: HomeAssistant,
+    dmx_config_entry: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+    mock_dmx_endpoint: aioresponses,
+) -> None:
+    """The DMX flush lock must hold across a cancellation-orphaned write.
+
+    Pre-fix: `async with _dmx_flush_lock:` released the lock the instant
+    the cancel handler returned, even though the shielded POST was still
+    running. A follow-up scheduled flush could acquire the (free) lock
+    and start a second POST in parallel, defeating the lock entirely
+    and putting two overlapping writes on the wire.
+
+    This test interleaves two POSTs and asserts the second one's start
+    timestamp is >= the first one's end timestamp — i.e. they never
+    overlap.
+    """
+    import time
+
+    assert await hass.config_entries.async_setup(dmx_config_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][dmx_config_entry.entry_id]
+
+    coordinator._dmx_shadow = AsyncMock()
+
+    write_calls: list[dict[str, float]] = []
+
+    async def tracked_slow_write(*_args: object, **_kwargs: object) -> str:
+        idx = len(write_calls)
+        write_calls.append({"start": time.monotonic(), "end": 0.0})
+        await asyncio.sleep(0.3)
+        write_calls[idx]["end"] = time.monotonic()
+        return "OK"
+
+    coordinator.client.async_set_dmx = AsyncMock(side_effect=tracked_slow_write)
+
+    # First flush: debounces, then starts POST #1.
+    coordinator.schedule_dmx_flush()
+    await asyncio.sleep(DMX_DEBOUNCE_SECONDS + 0.05)
+    assert len(write_calls) == 1, "POST #1 should be in flight"
+
+    # Second schedule mid-POST: pre-fix this would race POST #2 against
+    # the still-running POST #1.
+    coordinator.schedule_dmx_flush()
+
+    # Wait for both POSTs to settle. Generous bound:
+    # POST#1 (0.3s) + debounce (0.15s) + POST#2 (0.3s) + buffer.
+    await asyncio.sleep(1.0)
+    if coordinator._dmx_flush_task is not None:
+        with contextlib.suppress(asyncio.CancelledError, TimeoutError):
+            await asyncio.wait_for(coordinator._dmx_flush_task, timeout=2.0)
+
+    assert len(write_calls) == 2, f"Expected exactly 2 POSTs, got {len(write_calls)}"
+    # The crux: POST #2 must not start until POST #1 has finished.
+    assert write_calls[1]["start"] >= write_calls[0]["end"], (
+        f"Concurrent writes detected: POST#2 start={write_calls[1]['start']:.3f}, "
+        f"POST#1 end={write_calls[0]['end']:.3f} — lock was released prematurely"
+    )
+
+
 async def test_in_flight_dmx_write_not_cancelled_by_subsequent_schedule(
     hass: HomeAssistant,
     dmx_config_entry: MockConfigEntry,
