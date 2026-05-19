@@ -275,7 +275,7 @@ The integration is fully translatable. Strings live under
 Releases are **fully automated by [release-please](https://github.com/googleapis/release-please)** — maintainers don't tag, draft release notes, or zip by hand. Conventional Commit titles on `main` (see the table above) drive everything.
 
 1. Land PRs on `main` with conventional commit titles.
-2. [`release.yml`](.github/workflows/release.yml) runs `release-please-action@v5` on every push. If new `feat`/`fix`/`perf`/`revert`/`deps`/`docs` commits exist since the last release, it opens or updates a **"chore(main): release X.Y.Z" PR** that:
+2. [`release.yml`](.github/workflows/release.yml) runs `release-please-action@v5` on every push. If new release-triggering commits exist since the last release (`feat`, `fix`, `perf` — see the table above; `deps`/`docs` show up in the changelog but don't on their own bump the version), it opens or updates a **"chore(main): release X.Y.Z" PR** that:
     - bumps `.release-please-manifest.json`
     - bumps `custom_components/proconip_pool_controller/manifest.json:version` (via release-please's `extra-files: json` config)
     - bumps `custom_components/proconip_pool_controller/const.py:VERSION` (via `extra-files: generic` — the `# x-release-please-version` comment is the marker; don't remove it)
