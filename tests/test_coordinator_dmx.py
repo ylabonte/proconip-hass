@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock
 
@@ -159,6 +160,61 @@ async def test_dmx_shadow_cleared_when_controller_disables_dmx(
     # the coordinator should drop the shadow on this poll.
     await coordinator.async_refresh()
     assert coordinator.dmx_shadow is None
+
+
+async def test_in_flight_dmx_write_not_cancelled_by_subsequent_schedule(
+    hass: HomeAssistant,
+    dmx_config_entry: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+    mock_dmx_endpoint: aioresponses,
+) -> None:
+    """A schedule_dmx_flush() during an active POST must not abort the POST.
+
+    Without the asyncio.shield around `async_set_dmx`, a cancel would tear
+    aiohttp's exchange down mid-send and the controller would see a
+    half-sent payload. Simulate a slow write and confirm the original
+    POST runs to completion even when a second schedule fires during it.
+    """
+    assert await hass.config_entries.async_setup(dmx_config_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][dmx_config_entry.entry_id]
+
+    # Seed a shadow so the flush has something to send.
+    coordinator._dmx_shadow = AsyncMock()
+
+    write_completed = asyncio.Event()
+
+    async def slow_write(*_args: object, **_kwargs: object) -> str:
+        await asyncio.sleep(0.3)
+        write_completed.set()
+        return "OK"
+
+    coordinator.client.async_set_dmx = AsyncMock(side_effect=slow_write)
+
+    # Kick off the first flush — debounce, then start the slow POST.
+    coordinator.schedule_dmx_flush()
+    # Wait past the debounce so the POST is in flight, but not past its
+    # 0.3 s simulated duration.
+    await asyncio.sleep(DMX_DEBOUNCE_SECONDS + 0.05)
+    assert not write_completed.is_set(), "POST should still be in flight here"
+
+    # Second schedule arrives mid-POST. Pre-shield, this would cancel
+    # the in-flight write; post-shield, it just queues a follow-up
+    # debounced flush.
+    coordinator.schedule_dmx_flush()
+
+    # The original POST must run to completion (within a generous bound).
+    await asyncio.wait_for(write_completed.wait(), timeout=2.0)
+    assert write_completed.is_set(), "Original POST was cancelled mid-flight"
+    # And async_set_dmx was actually called (sanity check on the path).
+    assert coordinator.client.async_set_dmx.call_count >= 1
+
+    # Drain the follow-up debounced flush triggered by the second
+    # schedule so pytest-homeassistant-custom-component's lingering-
+    # task guard doesn't fail teardown.
+    if coordinator._dmx_flush_task is not None:
+        with contextlib.suppress(asyncio.CancelledError, TimeoutError):
+            await asyncio.wait_for(coordinator._dmx_flush_task, timeout=2.0)
 
 
 async def test_flush_failure_logs_and_does_not_crash(

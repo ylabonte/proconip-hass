@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -29,6 +30,22 @@ from .const import (
     DOMAIN,
     LOGGER,
 )
+
+
+def _consume_orphaned_dmx_write_error(task: asyncio.Task[Any]) -> None:
+    """Swallow exceptions from a detached DMX write so asyncio doesn't warn.
+
+    See `ProconipPoolControllerDataUpdateCoordinator._flush_dmx`: when the
+    flush task is cancelled mid-POST, the shielded write keeps running on
+    the loop. We've already walked away, so we don't want its eventual
+    exception (timeout, network drop, …) to surface as an unobserved-
+    future warning — we just log it at warning level and move on.
+    """
+    if task.cancelled():
+        return
+    exc = task.exception()
+    if exc is not None:
+        LOGGER.warning("Orphaned DMX flush completed with error: %s", exc)
 
 
 class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetStateData]):
@@ -143,8 +160,20 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         if self._dmx_shadow is None:
             return
         async with self._dmx_flush_lock:
+            # Shield the POST from a subsequent `schedule_dmx_flush()` that
+            # cancels this task: cancelling mid-request would tear the
+            # aiohttp exchange down and leave the controller looking at a
+            # half-sent payload. We let the in-flight write run to
+            # completion on the loop; if we're cancelled, we just stop
+            # awaiting it and the next debounced flush sends the latest
+            # shadow.
+            write_task = asyncio.ensure_future(self.client.async_set_dmx(self._dmx_shadow))
             try:
-                await self.client.async_set_dmx(self._dmx_shadow)
+                await asyncio.shield(write_task)
+            except asyncio.CancelledError:
+                # Detach: any later exception is intentional spilled milk.
+                write_task.add_done_callback(_consume_orphaned_dmx_write_error)
+                return
             except (
                 BadStatusCodeException,
                 ProconipApiException,
