@@ -118,13 +118,17 @@ async def test_quiet_window_suppresses_dmx_from_poll(
     coordinator = hass.data[DOMAIN][dmx_config_entry.entry_id]
 
     fresh_dmx = AsyncMock(name="fresh_dmx")
-    coordinator.client.async_get_dmx = AsyncMock(return_value=fresh_dmx)
+    get_dmx_mock = AsyncMock(return_value=fresh_dmx)
+    coordinator.client.async_get_dmx = get_dmx_mock
 
-    # Inside the quiet window: just-now write timestamp -> shadow stays None.
+    # Inside the quiet window: just-now write timestamp -> shadow stays
+    # None AND the network call is skipped entirely (avoid burning a
+    # controller round-trip on a response we'd discard anyway).
     coordinator._dmx_shadow = None
     coordinator._dmx_last_write = datetime.now(tz=UTC)
     await coordinator._maybe_refresh_dmx_shadow()
     assert coordinator._dmx_shadow is None
+    assert get_dmx_mock.call_count == 0, "async_get_dmx must not be called inside the quiet window"
 
     # Outside the quiet window: shadow updates to the fetched value.
     coordinator._dmx_last_write = datetime.now(tz=UTC) - timedelta(
@@ -132,12 +136,14 @@ async def test_quiet_window_suppresses_dmx_from_poll(
     )
     await coordinator._maybe_refresh_dmx_shadow()
     assert coordinator._dmx_shadow is fresh_dmx
+    assert get_dmx_mock.call_count == 1
 
     # Never written: shadow updates on first poll (last_write is None branch).
     coordinator._dmx_shadow = None
     coordinator._dmx_last_write = None
     await coordinator._maybe_refresh_dmx_shadow()
     assert coordinator._dmx_shadow is fresh_dmx
+    assert get_dmx_mock.call_count == 2
 
 
 async def test_dmx_shadow_cleared_when_controller_disables_dmx(

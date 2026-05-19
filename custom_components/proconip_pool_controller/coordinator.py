@@ -125,7 +125,16 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         return data
 
     async def _maybe_refresh_dmx_shadow(self) -> None:
-        """Fetch DMX from controller; apply only if outside the quiet window."""
+        """Fetch DMX from controller; apply only if outside the quiet window.
+
+        Skip the fetch entirely while inside the post-write quiet window —
+        we'd just discard the response anyway, and a controller fielding
+        a slider drag doesn't need an extra `GetDmx.csv` round-trip
+        immediately after each write. The next poll past the window
+        picks up the canonical state.
+        """
+        if self._dmx_last_write is not None and not self._dmx_quiet_window_elapsed():
+            return
         try:
             fresh = await self.client.async_get_dmx()
         except (
@@ -135,9 +144,7 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         ) as exception:
             LOGGER.warning("DMX poll failed: %s", exception)
             return
-
-        if self._dmx_last_write is None or self._dmx_quiet_window_elapsed():
-            self._dmx_shadow = fresh
+        self._dmx_shadow = fresh
 
     def _dmx_quiet_window_elapsed(self) -> bool:
         if self._dmx_last_write is None:
