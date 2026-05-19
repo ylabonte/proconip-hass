@@ -229,6 +229,62 @@ async def test_concurrent_dmx_writes_serialized_even_after_cancellation(
     )
 
 
+async def test_orphaned_dmx_write_bumps_last_write_on_success(
+    hass: HomeAssistant,
+    dmx_config_entry: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+    mock_dmx_endpoint: aioresponses,
+) -> None:
+    """The quiet window must be measured from *write completion*, even when
+    the flush task was cancelled and the POST kept running as a shielded
+    orphan. Otherwise a POST that outlasts DMX_QUIET_WINDOW_SECONDS would
+    let `_maybe_refresh_dmx_shadow()` overwrite the shadow with pre-write
+    controller state before the write actually landed.
+    """
+    assert await hass.config_entries.async_setup(dmx_config_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][dmx_config_entry.entry_id]
+
+    coordinator._dmx_shadow = AsyncMock()
+
+    async def slow_write(*_args: object, **_kwargs: object) -> str:
+        await asyncio.sleep(0.3)
+        return "OK"
+
+    coordinator.client.async_set_dmx = AsyncMock(side_effect=slow_write)
+
+    # First flush: debounce, then start the slow POST.
+    coordinator.schedule_dmx_flush()
+    await asyncio.sleep(DMX_DEBOUNCE_SECONDS + 0.05)
+    timestamp_before_cancel = coordinator._dmx_last_write
+    assert timestamp_before_cancel is not None
+
+    # Cancel by scheduling a second flush. The first POST gets orphaned
+    # (kept alive by asyncio.shield) and runs to completion in the
+    # background.
+    coordinator.schedule_dmx_flush()
+    # Snapshot the orphan task so we can await it specifically.
+    orphan_writes = coordinator.client.async_set_dmx.call_count
+    assert orphan_writes == 1, "Exactly one POST should be in flight at this point"
+
+    # Let the orphan finish AND its done-callback fire.
+    await asyncio.sleep(0.4)
+
+    # _dmx_last_write must have advanced past the schedule timestamp —
+    # otherwise the quiet window is too short and a poll could clobber
+    # the shadow before the controller has caught up.
+    assert coordinator._dmx_last_write is not None
+    assert coordinator._dmx_last_write > timestamp_before_cancel, (
+        "Orphan-completion callback must bump _dmx_last_write on success"
+    )
+
+    # Drain the follow-up debounced flush so pytest-homeassistant-custom-
+    # component's lingering-task guard is happy.
+    if coordinator._dmx_flush_task is not None:
+        with contextlib.suppress(asyncio.CancelledError, TimeoutError):
+            await asyncio.wait_for(coordinator._dmx_flush_task, timeout=2.0)
+
+
 async def test_in_flight_dmx_write_not_cancelled_by_subsequent_schedule(
     hass: HomeAssistant,
     dmx_config_entry: MockConfigEntry,

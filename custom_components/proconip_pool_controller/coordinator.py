@@ -217,8 +217,20 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         `async_set_dmx` POST running on the loop. The next scheduled flush
         is parked on `_dmx_flush_lock.acquire()` until this callback fires,
         which guarantees no two POSTs ever overlap on the wire.
+
+        On a successful orphan completion we also bump `_dmx_last_write` —
+        same as the non-cancelled success path in `_flush_dmx`. Without
+        this, a POST that outlasts `DMX_QUIET_WINDOW_SECONDS` would leave
+        the quiet window measured from the *schedule* time, letting
+        `_maybe_refresh_dmx_shadow()` resume polling and overwrite the
+        shadow with pre-write controller state before the write actually
+        landed. Failures still skip the bump — if the controller didn't
+        accept the write, the next poll should reveal the real state with
+        no artificial quiet window.
         """
         _consume_orphaned_dmx_write_error(task)
+        if not task.cancelled() and task.exception() is None:
+            self._dmx_last_write = datetime.now(tz=UTC)
         self._dmx_flush_lock.release()
 
     async def async_shutdown(self) -> None:
