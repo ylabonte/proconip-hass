@@ -486,7 +486,11 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
                 self._merged_options = new_options
                 return await self.async_step_init()
 
-        current = self.config_entry.options
+        # Prefer pending values from `_merged_options` (set above on a
+        # successful credential test) so re-opening this step after a
+        # menu bounce shows the user's just-entered URL/credentials,
+        # not the stale ones persisted in `config_entry.options`.
+        current = getattr(self, "_merged_options", None) or self.config_entry.options
         return self.async_show_form(
             step_id="connection",
             data_schema=vol.Schema(
