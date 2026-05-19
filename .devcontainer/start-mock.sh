@@ -42,5 +42,10 @@ done
 echo "WARNING: ProCon.IP mock did not respond on :$PORT within ${READY_TIMEOUT_S}s." >&2
 echo "Tail of $LOG:" >&2
 tail -n 20 "$LOG" >&2 || true
+# Reap the still-running mock so it doesn't hog $PORT for the next
+# postStart attempt (or a manual `bash .devcontainer/start-mock.sh`
+# retry). Without this, the retry would race against a stale process
+# still bound to the port and look like a different failure mode.
+kill "$PID" 2>/dev/null || true
 # Exit non-zero so the container surface treats this as a failed postStart.
 exit 1
