@@ -179,6 +179,29 @@ async def test_dmx_light_add_out_of_range_rejected(
     assert result_form["errors"] == {"start_channel": "out_of_range"}
 
 
+async def test_dmx_light_add_blank_name_rejected(
+    hass: HomeAssistant,
+    setup_integration_dmx_on: MockConfigEntry,
+) -> None:
+    """Whitespace-only names must surface an explicit error, not be silently
+    accepted with a placeholder slug.
+    """
+    entry = setup_integration_dmx_on
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result_menu = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "dmx_lights_menu"}
+    )
+    result_add = await hass.config_entries.options.async_configure(
+        result_menu["flow_id"], user_input={"next_step_id": "dmx_light_add"}
+    )
+    result_form = await hass.config_entries.options.async_configure(
+        result_add["flow_id"],
+        user_input={"name": "   ", "type": "rgbw", "start_channel": 1},
+    )
+    assert result_form["type"] is FlowResultType.FORM
+    assert result_form["errors"] == {"name": "blank"}
+
+
 def _seed_one_light(hass: HomeAssistant, entry: MockConfigEntry) -> None:
     """Persist a single ``Pool main`` (RGBW, ch 1) light onto the entry."""
     hass.config_entries.async_update_entry(

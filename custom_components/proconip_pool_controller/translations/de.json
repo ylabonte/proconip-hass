@@ -34,7 +34,8 @@
             "unknown": "Unbekannter Fehler aufgetreten.",
             "out_of_range": "Kanalbereich überschreitet 16. Wähle einen kleineren Startkanal.",
             "overlap": "Diese Kanäle überschneiden sich mit einem bereits konfigurierten Licht.",
-            "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits."
+            "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits.",
+            "blank": "Name darf nicht leer sein."
         }
     },
     "options": {
@@ -81,7 +82,8 @@
             "unknown": "Unbekannter Fehler aufgetreten.",
             "out_of_range": "Kanalbereich überschreitet 16. Wähle einen kleineren Startkanal.",
             "overlap": "Diese Kanäle überschneiden sich mit einem bereits konfigurierten Licht.",
-            "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits."
+            "duplicate": "Ein Licht mit diesem Namen (oder Slug) existiert bereits.",
+            "blank": "Name darf nicht leer sein."
         }
     },
     "entity": {

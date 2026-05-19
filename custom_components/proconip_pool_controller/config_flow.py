@@ -114,14 +114,24 @@ def _validate_new_dmx_light(
     errors: dict[str, str] = {}
     count = LIGHT_TYPE_CHANNEL_COUNT[light_type]
 
+    name = name.strip()
+    if not name:
+        # Reject blank or whitespace-only names so they never reach the
+        # slugifier (which would fall back to "light") and don't end up
+        # as a nameless row in the options UI.
+        errors["name"] = "blank"
+
     if start_channel < 1 or start_channel + count - 1 > 16:
         errors["start_channel"] = "out_of_range"
     elif not _validate_no_overlap(existing_lights, start_channel, count, skip_slug=edit_slug):
         errors["start_channel"] = "overlap"
 
-    slug = edit_slug or _slugify_name(name)
-    if edit_slug is None and any(light["slug"] == slug for light in existing_lights):
-        errors["name"] = "duplicate"
+    if not errors.get("name"):
+        slug = edit_slug or _slugify_name(name)
+        if edit_slug is None and any(light["slug"] == slug for light in existing_lights):
+            errors["name"] = "duplicate"
+    else:
+        slug = edit_slug or ""
 
     if errors:
         return None, errors

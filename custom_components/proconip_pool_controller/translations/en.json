@@ -34,7 +34,8 @@
             "unknown": "Unknown error occurred.",
             "out_of_range": "Channel range exceeds 16. Pick a smaller start channel.",
             "overlap": "These channels overlap with another configured light.",
-            "duplicate": "A light with this name (or slug) already exists."
+            "duplicate": "A light with this name (or slug) already exists.",
+            "blank": "Name is required."
         }
     },
     "options": {
@@ -81,7 +82,8 @@
             "unknown": "Unknown error occurred.",
             "out_of_range": "Channel range exceeds 16. Pick a smaller start channel.",
             "overlap": "These channels overlap with another configured light.",
-            "duplicate": "A light with this name (or slug) already exists."
+            "duplicate": "A light with this name (or slug) already exists.",
+            "blank": "Name is required."
         }
     },
     "entity": {
