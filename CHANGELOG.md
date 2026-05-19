@@ -19,8 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes
 
-- **Home Assistant minimum version is now 2026.5.2.** This matches the first HA release whose bundled `aiohttp` (3.13.5) satisfies `proconip>=2.1.0`. Older HA installs must upgrade before installing this release.
-- **`proconip` library bumped to `>=2.1.0`** (Python 3.13+ required by the library, matching HA Core 2026.5). The 2.0.0 release fixed a double-application bug in `offset`/`gain` calibration — controllers with non-default calibration may report different relay state after upgrading; verify state for any custom-calibrated controller. 2.1.0 itself adds MIT relicensing and updated dev-deps; no further API changes.
+- **Home Assistant minimum version is now 2025.2.0.** First HA release that ships Python 3.13 (required by the `proconip` library) and bundles `aiohttp` 3.11.x (well above what `proconip>=2.1.1` needs). Older HA installs must upgrade before installing this release.
+- **`proconip` library bumped to `>=2.1.1`** (Python 3.13+ required by the library). 2.0.0 fixed a double-application bug in `offset`/`gain` calibration — controllers with non-default calibration may report different relay state after upgrading; verify state for any custom-calibrated controller. 2.1.0 added MIT relicensing and updated dev-deps. 2.1.1 relaxed the runtime `aiohttp`/`yarl` floors back to their v2.0.0 values, which is what makes the HA 2025.2.0 floor possible here.
 - **OptionsFlow internals changed** — the `__init__` override and the v1 → v1.2 entry-layout migration code were removed. Users on entry layouts from before v1.2.0 (Feb 2024) must upgrade through an older release first.
 
 ### Added
