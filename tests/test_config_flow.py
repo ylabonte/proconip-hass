@@ -342,9 +342,7 @@ async def test_options_flow_connection_reopen_uses_merged_options(
 
     # Defaults must reflect the pending merged options, not the
     # persisted entry options (which still hold `original_url`).
-    schema_defaults = {
-        key.schema: key.default() for key in result["data_schema"].schema
-    }
+    schema_defaults = {key.schema: key.default() for key in result["data_schema"].schema}
     assert schema_defaults[CONF_URL] == new_url
     assert config_entry.options[CONF_URL] == original_url  # unchanged on disk
 
