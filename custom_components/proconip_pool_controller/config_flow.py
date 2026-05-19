@@ -365,6 +365,13 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
     # first assignment (which sets it back to None).
     _pending_remove_slug: str | None = None
 
+    # If the user updates Connection settings to point at a different
+    # controller, that submitted credential test gives us fresh
+    # GetStateData. We stash it so the DMX-menu gate reflects the new
+    # controller's capabilities immediately, without waiting for a
+    # config-entry reload to refresh `coordinator.data`.
+    _latest_tested_state: Any = None
+
     def _show_dmx_menu_entry(self) -> bool:
         """Whether the top-level menu should include the DMX-lights entry.
 
@@ -373,16 +380,22 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
         - The entry already has configured DMX lights — even if the
           controller now reports DMX as disabled, the user needs a way
           to manage/remove these orphans via the UI.
-        - OR the coordinator is healthy AND its last poll reports
-          `is_dmx_enabled()` True.
+        - OR `is_dmx_enabled()` is reported True by, in order of
+          preference: (1) the freshest credentials-test state from this
+          options session, or (2) the live coordinator's last poll.
 
-        Unhealthy coordinator (no recent successful poll) with no
-        existing lights → hide the entry. The user can fix the
-        connection via the Connection settings entry, then re-open.
+        Unhealthy coordinator (no recent successful poll) and no
+        fresh test state, with no existing lights → hide the entry.
+        The user can fix the connection via the Connection settings
+        entry, then re-open.
         """
         options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
         if options.get(CONF_DMX_LIGHTS):
             return True
+        # Fresh test state from a just-saved Connection update wins over
+        # the (possibly pre-swap) coordinator data.
+        if self._latest_tested_state is not None:
+            return bool(self._latest_tested_state.is_dmx_enabled())
         coordinator: ProconipPoolControllerDataUpdateCoordinator | None = self.hass.data.get(
             DOMAIN, {}
         ).get(self.config_entry.entry_id)
@@ -419,7 +432,7 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
         _errors: dict[str, str] = {}
         if user_input is not None:
             try:
-                await connection_tester.async_test_credentials(
+                state = await connection_tester.async_test_credentials(
                     url=user_input[CONF_URL],
                     username=user_input[CONF_USERNAME],
                     password=user_input[CONF_PASSWORD],
@@ -449,6 +462,12 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
                 LOGGER.exception(exception)
                 _errors["base"] = "unknown"
             else:
+                # Stash the fresh state so the DMX-menu gate in
+                # _show_dmx_menu_entry reflects the newly-pointed-at
+                # controller's capabilities immediately (otherwise the
+                # gate keeps reading the previous coordinator.data until
+                # the entry is reloaded).
+                self._latest_tested_state = state
                 base = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
                 new_options = {**base, **user_input}
                 self._merged_options = new_options
