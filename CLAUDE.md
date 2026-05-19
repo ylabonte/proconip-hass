@@ -68,7 +68,7 @@ All scripts cd into the repo root themselves; run them from anywhere.
 
 | Command | What it does |
 |---|---|
-| `scripts/setup` | Creates `.venv` (Python ≥ 3.14 — dev/CI floor, see "Release / version bumping" below for why), `pip install -e ".[dev,test]"` + `colorlog`, then runs `scripts/install-ha-deps.py` to pre-install HA's eager-import deps (parsed from each `manifest.json`). Rebuilds the venv if its existing interpreter doesn't match the just-selected `$PYTHON`. |
+| `scripts/setup` | Creates `.venv` (Python ≥ 3.14.2 — dev/CI floor, see "Release / version bumping" below for why; the script rejects 3.14.0/3.14.1), `pip install -e ".[dev,test]"` + `colorlog`, then runs `scripts/install-ha-deps.py` to pre-install HA's eager-import deps (parsed from each `manifest.json`). Rebuilds the venv if its existing interpreter is below the floor or doesn't match the just-selected `$PYTHON`. |
 | `scripts/install-ha-deps.py` | Walks HA's bundled `components/<name>/manifest.json` to install the pip packages our slim config + HA's `_base_components()` need. The source of truth is HA's manifests — *do not hand-curate a list of pip packages here.* |
 | `scripts/develop` | Boots a local Home Assistant on port 8123 with `--skip-pip` (everything was pre-installed by setup). Use this to manually verify changes. |
 | `scripts/lint` | Ruff lint and format, mypy type-check. |
@@ -147,7 +147,7 @@ Releases are fully automated by [release-please](https://github.com/googleapis/r
 **Do:** bump `hacs.json:homeassistant` minimum if you start using newer HA APIs.
 
 - **Runtime minimum (what shipped users need): HA 2025.2.0, Python 3.13+.** That's the floor declared in `hacs.json` and `manifest.json` (`proconip>=2.1.1`). HA 2025.2.0 is the first release that required Python 3.13 (which `proconip` itself requires); its bundled `aiohttp` 3.11.x easily satisfies `proconip>=2.1.1`'s relaxed `aiohttp>=3.10` floor.
-- **Dev / CI minimum: Python 3.14.** Higher than the runtime floor because `pytest-homeassistant-custom-component` pulls in current HA Core (2026.5+) which itself requires 3.14.2+. See `.github/workflows/test.yml`, `.github/workflows/lint.yml`, `scripts/setup`, and the devcontainer image `python:dev-3.14`. `pyproject.toml` mypy sits on 3.14 for the same reason (mypy follows imports into HA's source, which uses PEP 758 syntax). `ruff target-version = "py313"` is what actually enforces our own source stays valid on 3.13.
+- **Dev / CI minimum: Python 3.14.2.** Higher than the runtime floor because `pytest-homeassistant-custom-component` pulls in current HA Core (2026.5+) which itself requires 3.14.2+. `scripts/setup` enforces this and refuses 3.14.0/3.14.1 up front rather than letting pip-resolve fail with a confusing error. See `.github/workflows/test.yml`, `.github/workflows/lint.yml`, `scripts/setup`, and the devcontainer image `python:dev-3.14`. `pyproject.toml` mypy sits on 3.14 for the same reason (mypy follows imports into HA's source, which uses PEP 758 syntax). `ruff target-version = "py313"` is what actually enforces our own source stays valid on 3.13.
 
 ### Conventional Commits — type → release-please behaviour
 

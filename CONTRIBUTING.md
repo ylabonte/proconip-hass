@@ -75,7 +75,7 @@ external access). Restart the auto-started instance with `bash
 
 Requirements:
 
-- **Python ≥ 3.14** for development. (Runtime ships fine on Python ≥ 3.13 — see `hacs.json` — but `[dev,test]` pulls in `pytest-homeassistant-custom-component`, which pulls current HA Core, which itself requires 3.14.2+.)
+- **Python ≥ 3.14.2** for development. (Runtime ships fine on Python ≥ 3.13 — see `hacs.json` — but `[dev,test]` pulls in `pytest-homeassistant-custom-component`, which pulls current HA Core, which itself requires 3.14.2+. `scripts/setup` enforces this and will reject 3.14.0/3.14.1.)
 - Git
 - A terminal
 
@@ -89,9 +89,10 @@ scripts/setup
 
 `scripts/setup` will:
 
-- Pick the newest Python ≥ 3.14 it can find (`python3.14`, then
-  `python3`). Override with
-  `PYTHON=python3.X scripts/setup` to force a specific interpreter.
+- Pick the newest Python ≥ 3.14.2 it can find (`python3.14`, then
+  `python3`; 3.14.0 and 3.14.1 are rejected). Override with
+  `PYTHON=python3.X scripts/setup` to force a specific interpreter
+  (the override is gated on the same ≥ 3.14.2 floor).
 - Create (or rebuild, if broken) `.venv` in the repo root.
 - Install the dev + test extras via `pip install -e ".[dev,test]"`.
 
