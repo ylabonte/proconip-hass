@@ -36,9 +36,14 @@ class MockState:
     - bit 7 (128) — Repeated mails
     - bit 8 (256) — DMX extension
 
-    Default is 0 so the mock's emitted CSV stays byte-compatible with
+    Default is 0 so the SYSINFO bitfield rendered into row 1 of the
+    emitted CSV matches the SYSINFO row of
     ``tests/fixtures/get_state.csv``; client code that depends on a flag
-    constructs ``MockState(config_other_enable=…)`` to turn it on.
+    constructs ``MockState(config_other_enable=…)`` to turn it on. Other
+    rows (notably the relay-state row) are rebuilt from
+    ``relay_enabled`` / ``relay_on`` and intentionally start cleared —
+    tests that need specific relay values seed them explicitly via
+    ``MockState(relay_enabled=…, relay_on=…)``.
     """
 
     relay_enabled: list[bool] = field(default_factory=lambda: [False] * NUM_RELAY_BITS)
