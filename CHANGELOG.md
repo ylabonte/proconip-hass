@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Release pipeline switched to [release-please](https://github.com/googleapis/release-please)** (mirrors the `proconip-pypi` sibling repo). Conventional Commit titles on `main` now drive version bumps, changelog generation, tagging, and the auto-opened "release: X.Y.Z" PR. The old release-drafter + manual-publish flow has been removed. See **Release flow** in `CONTRIBUTING.md` and **Release / version bumping** in `CLAUDE.md` for the full walkthrough.
 - New `hacs-release.yml` workflow handles the zip-and-attach on `release: published`, replacing the in-tree `yq`-based version rewrite (release-please's `extra-files` config keeps `manifest.json` and `const.py` in sync at release-PR time).
-- Replaced Dependabot's `github-actions` ecosystem with a dedicated weekly workflow that runs `ylabonte/github-actions-updater@v1` to open a single grouped PR for outdated action references. `automerge.yml` broadened to handle that bot alongside Dependabot.
+- Replaced Dependabot's `github-actions` ecosystem with a dedicated weekly workflow that runs `ylabonte/github-actions-updater@v1` to open a single grouped PR for outdated action references. The previous `automerge.yml` workflow was removed entirely — Dependabot and the action-updater PRs are reviewed and merged by hand for now.
 - Refreshed action versions across CI; concurrency groups + least-privilege permissions; pip caching keyed on `pyproject.toml`.
 - Repo prepared for HACS default-list submission (post-release).
 
