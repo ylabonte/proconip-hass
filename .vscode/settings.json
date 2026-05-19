@@ -1,13 +1,34 @@
 {
     "[python]": {
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.formatOnPaste": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
-        "editor.formatOnType": true,
         "editor.tabSize": 4,
         "files.eol": "\n",
         "files.trimTrailingWhitespace": true,
-        "pylint.enabled": true
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
     },
-    "python.analysis.autoImportCompletions": true
+    "ruff.importStrategy": "fromEnvironment",
+    "python.analysis.autoImportCompletions": true,
+    "pylint.enabled": false,
+
+    // Don't watch the venv. HA's lazy pip-installer churns .venv/ on
+    // first boot; without this, the file watcher fires thousands of
+    // events and every language-server client restarts ("Server
+    // disconnected unexpectedly" toast spam).
+    "files.watcherExclude": {
+        "**/.venv/**": true,
+        "**/.mypy_cache/**": true,
+        "**/.ruff_cache/**": true,
+        "**/.pytest_cache/**": true,
+        "**/__pycache__/**": true
+    },
+    "search.exclude": {
+        "**/.venv": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/.pytest_cache": true
+    }
 }

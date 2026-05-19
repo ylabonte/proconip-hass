@@ -1,19 +1,30 @@
 # https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 version: 2
+
 updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    assignees:
-      - ylabonte
+  # GitHub Actions updates are handled by .github/workflows/update-actions.yml
+  # (using ylabonte/github-actions-updater) — we dogfood that action rather
+  # than letting Dependabot manage action versions. If you re-enable a
+  # `package-ecosystem: github-actions` block here, drop the workflow
+  # alongside it to avoid duplicate PRs.
 
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
-    ignore:
-      # Dependabot should not update Home Assistant as that should match the homeassistant key in hacs.json
-      - dependency-name: "homeassistant"
     assignees:
       - ylabonte
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+    groups:
+      dev-tools:
+        patterns:
+          - "ruff"
+          - "mypy"
+          - "pre-commit"
+          - "pytest*"
+          - "pytest-*"
+          - "aioresponses"
+          - "pytest-freezer"

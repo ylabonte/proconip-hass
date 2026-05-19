@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  # Restrict push to `main` so PR pushes don't fire both push *and*
+  # pull_request events (which used to double-run lint/test on every
+  # commit to a PR branch). Mirrors validate.yml + codeql.yml.
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+concurrency:
+  # Stable per workflow + ref so superseded runs for the same branch/PR
+  # are cancelled; including github.run_id would make every group unique
+  # and `cancel-in-progress` ineffective.
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 3.14 because pytest-homeassistant-custom-component (>=0.13.331)
+        # pins homeassistant>=2026.5.2, which itself requires Python>=3.14.2.
+        # Note this is a *dev/CI* floor — shipped users only need Python 3.13
+        # (proconip's hard floor) and HA 2025.2.0+ (see hacs.json).
+        python-version: ["3.14"]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: "pyproject.toml"
+
+      - name: Install package and test dependencies
+        run: pip install -e ".[test]"
+
+      - name: Run tests with coverage
+        run: pytest
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 7

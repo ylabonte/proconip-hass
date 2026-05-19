@@ -1,13 +1,33 @@
-# https://www.home-assistant.io/integrations/default_config/
-default_config:
+# Dev Home Assistant config.
+#
+# Slim component set on purpose: just what's needed to add and exercise
+# the proconip integration from the UI. We do NOT use `default_config:`
+# because that loads ~30 integrations (bluetooth, usb, dhcp, ssdp, cloud,
+# mobile_app, …) whose runtime deps would trigger HA's async lazy
+# installer at boot — and that installer doesn't block component setup,
+# so first boots end up in recovery mode while installs race against
+# imports. The lazy-install storm also churns .venv hard enough to
+# restart every language server in VS Code.
+#
+# Instead, scripts/setup pre-installs the pip requirements for these
+# integrations AND for HA's hard-coded `_base_components()` eager-import
+# list, by walking HA's own manifest.json files (no hand-curated package
+# names). See scripts/install-ha-deps.py.
+#
+# If you add an integration key below, also add it to CONFIG_INTEGRATIONS
+# in scripts/install-ha-deps.py so its deps get pre-installed.
 
-# https://www.home-assistant.io/integrations/logger/
+frontend:
+config:
+api:
+http:
 logger:
   default: info
   logs:
     custom_components.proconip_pool_controller: debug
 
-# Enable VSCode debugging
-debugpy:
-  start: true
-  wait: true
+# debugpy: deliberately omitted.
+# When you launch HA via the VS Code "Home Assistant" run configuration,
+# debugpy is already attached via the launcher. Enabling HA's debugpy:
+# integration here would start a second debugger server on :5678 — only
+# add it back if you're attaching from outside VS Code.

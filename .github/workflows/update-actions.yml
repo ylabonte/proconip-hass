@@ -1,0 +1,30 @@
+name: Update GitHub Actions
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # Mondays, 08:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ylabonte/github-actions-updater@v1
+        id: ghau
+        with:
+          write: true
+          commit: true
+      - uses: peter-evans/create-pull-request@v6
+        if: steps.ghau.outputs.changes > 0
+        with:
+          branch: chore/update-github-actions
+          title: 'chore(deps): update GitHub Actions'
+          body: |
+            Automated update of outdated GitHub Actions references.
+            See the commit message for the per-action breakdown.
+          delete-branch: true

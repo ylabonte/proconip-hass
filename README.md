@@ -15,13 +15,14 @@
 
 **This component will set up the following platforms.**
 
-| Platform        | Description                                         |
-|-----------------|-----------------------------------------------------|
-| `binary_sensor` | Show flags/binary data from `GetState.csv` API.     |
-| `sensor`        | Show various data from `GetState.csv` API.          |
-| `switch`        | `On`/`Off` and `Auto`/`Manual` switches for relays. |
-| `select`        | `Auto`/`On`/`Off` dropdowns for relays.             |
-| `number`        | Dosage relay timer/countdown in seconds.            |
+| Platform        | Description                                              |
+|-----------------|----------------------------------------------------------|
+| `binary_sensor` | Show flags/binary data from `GetState.csv` API.          |
+| `light`         | DMX-channel lights (dimmer / RGB / RGBW) configured via the integration's options. |
+| `number`        | Dosage relay timer/countdown in seconds.                 |
+| `select`        | `Auto`/`On`/`Off` dropdowns for relays.                  |
+| `sensor`        | Show various data from `GetState.csv` API.               |
+| `switch`        | `On`/`Off` and `Auto`/`Manual` switches for relays.      |
 
 ## Table of contents
 * [Screenshots](#screenshots)
@@ -47,6 +48,13 @@
 | [![Integration device controls][screenshot2]][screenshot2] | [![Integration device sensors][screenshot3]][screenshot3] | [![More integration device sensors][screenshot4]][screenshot4] |
 
 ## Install with HACS (recommended)
+
+> ⚠️ **HACS default-list submission pending.** Once 2.0.0 is released and
+> the [hacs/default PR](https://github.com/hacs/default) merges, you'll
+> be able to install this directly from the HACS default integration
+> list without adding a custom repository. Until then, follow the manual
+> custom-repository steps below.
+
 If you have not already done so, you should first install [HACS (Home Assistant Community Store)](https://hacs.xyz/).
 It is the usual way to install custom integrations and keep them up to date.
 
@@ -121,18 +129,7 @@ haven't found an english documentation/information so far):
 
 ## Changelog
 
-### Version 1.2.0 (2024-02-12)
-WARNING: This update will create new entities. I could not find a way to remove the old entities programatically, so I
-apologize, but you will have to remove the obsolete entities manually (you can easily filter for them and remove all at
-once).
-
-* Require Home Assistant Core 2024.2.1 or newer.
-* Fix configuration/setup bug (issue #28).
-* Fix multi instance support.
-
-### Earlier Versions
-All earlier versions have known bugs. Please update!
-For more information about
+See [CHANGELOG.md](CHANGELOG.md) for all release notes.
 
 ## Credits
 This project was generated using the [integration blueprint][integration_blueprint] from [@Ludeeus](https://github.com/ludeeus).

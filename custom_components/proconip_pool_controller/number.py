@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 
-from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.number import NumberEntity, NumberMode
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -18,9 +18,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_devices: AddEntitiesCallback
 ) -> None:
     """Set up the select platform."""
-    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
-        entry.entry_id
-    ]
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
     relays = []
     for i in range(number_of_relays):
@@ -42,9 +40,7 @@ async def async_setup_entry(
     async_add_devices(relays)
 
 
-class ProconipPoolControllerDosageRelayTimer(
-    ProconipPoolControllerEntity, NumberEntity
-):
+class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, NumberEntity):
     """ProCon.IP Pool Controller relay dosage relay timer class."""
 
     _attr_mode = NumberMode.BOX
@@ -52,6 +48,7 @@ class ProconipPoolControllerDosageRelayTimer(
     _attr_native_min_value = 5
     _attr_native_step = 1
     _attr_native_unit_of_measurement = "seconds"
+    _attr_translation_key = "dosage_relay"
     _countdown_value: int = 0
 
     def __init__(
@@ -64,7 +61,10 @@ class ProconipPoolControllerDosageRelayTimer(
         super().__init__(coordinator=coordinator)
         self._relay_id = relay_no - 1
         self._relay = coordinator.data.get_relay(relay_id=self._relay_id)
-        self._attr_name = f"Relay No. {relay_no} Dosage ({self._relay.name})"
+        self._attr_translation_placeholders = {
+            "relay_no": str(relay_no),
+            "device_name": self._relay.name,
+        }
         self._attr_unique_id = f"relay_dosage_{relay_no}_{instance_id}"
 
     @property

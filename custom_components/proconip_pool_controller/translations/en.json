@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "description": "If you need help with the configuration have a look here: https://github.com/ylabonte/proconip-hass",
+                "description": "If you need help with the configuration have a look here: {docs_url}",
                 "data": {
                     "name": "Instance name (eg. 'Jacuzzi')",
                     "url": "Controller Address (URL)",
@@ -10,12 +10,120 @@
                     "username": "Username",
                     "password": "Password"
                 }
+            },
+            "setup_menu": {
+                "title": "Optional: DMX lights",
+                "description": "Configured so far: {count}. You can add DMX lights now, or skip this and add them later via the integration's options.",
+                "menu_options": {
+                    "setup_add_dmx_light": "Add a DMX light",
+                    "setup_finish": "Finish setup"
+                }
+            },
+            "setup_add_dmx_light": {
+                "title": "Add DMX light",
+                "data": {
+                    "name": "Name",
+                    "type": "Light type",
+                    "start_channel": "Start channel (1-16)"
+                }
             }
         },
         "error": {
             "auth": "Username/Password is wrong.",
             "connection": "Unable to connect to the server.",
-            "unknown": "Unknown error occurred."
+            "unknown": "Unknown error occurred.",
+            "out_of_range": "Channel range exceeds 16. Pick a smaller start channel.",
+            "overlap": "These channels overlap with another configured light.",
+            "duplicate": "A light with this name (or slug) already exists.",
+            "blank": "Name is required."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Manage integration",
+                "menu_options": {
+                    "connection": "Connection settings",
+                    "dmx_lights_menu": "DMX lights",
+                    "save_and_finish": "Save and finish"
+                }
+            },
+            "connection": {
+                "description": "Update connection settings.",
+                "data": {
+                    "url": "Controller Address (URL)",
+                    "username": "Username",
+                    "password": "Password",
+                    "scan_interval": "Scan/update interval in seconds"
+                }
+            },
+            "dmx_lights_menu": {
+                "title": "DMX lights",
+                "menu_options": {
+                    "dmx_light_add": "Add light",
+                    "init": "Back"
+                }
+            },
+            "dmx_lights_remove_menu": {
+                "title": "Remove a light"
+            },
+            "dmx_light_add": {
+                "title": "Add DMX light",
+                "data": {
+                    "name": "Name",
+                    "type": "Light type",
+                    "start_channel": "Start channel (1-16)"
+                }
+            }
+        },
+        "error": {
+            "auth": "Username/Password is wrong.",
+            "connection": "Unable to connect to the server.",
+            "unknown": "Unknown error occurred.",
+            "out_of_range": "Channel range exceeds 16. Pick a smaller start channel.",
+            "overlap": "These channels overlap with another configured light.",
+            "duplicate": "A light with this name (or slug) already exists.",
+            "blank": "Name is required."
+        }
+    },
+    "entity": {
+        "binary_sensor": {
+            "chlorine_dosage_enabled": {"name": "Chlorine Dosage enabled"},
+            "electrolysis_enabled": {"name": "Electrolysis enabled"},
+            "ph_minus_dosage_enabled": {"name": "pH Minus Dosage enabled"},
+            "ph_plus_dosage_enabled": {"name": "pH Plus Dosage enabled"},
+            "tcpip_boost_enabled": {"name": "TCP/IP Boost enabled"},
+            "sd_card_enabled": {"name": "SD Card enabled"},
+            "dmx_enabled": {"name": "DMX enabled"},
+            "avatar_enabled": {"name": "Avatar enabled"},
+            "relay_extension_enabled": {"name": "Relay Extension enabled"},
+            "high_bus_load_enabled": {"name": "High Bus Load enabled"},
+            "flow_sensor_enabled": {"name": "Flow Sensor enabled"},
+            "repeated_mails_enabled": {"name": "Repeated Mails enabled"},
+            "dmx_extension_enabled": {"name": "DMX Extension enabled"}
+        },
+        "sensor": {
+            "redox": {"name": "Redox sensor"},
+            "ph": {"name": "pH sensor"},
+            "temperature": {"name": "Temperature No. {sensor_no}: {device_name}"},
+            "analog": {"name": "Analog No. {sensor_no}: {device_name}"},
+            "digital_input": {"name": "Digital Input No. {sensor_no}: {device_name}"},
+            "canister": {"name": "Canister {device_name}"},
+            "canister_consumption": {"name": "Canister consumption {device_name}"},
+            "relay_state": {"name": "Relay No. {relay_no} ({device_name}) State"}
+        },
+        "switch": {
+            "relay": {"name": "Relay No. {relay_no} ({device_name})"},
+            "relay_auto_mode": {"name": "Relay No. {relay_no} ({device_name}) Auto-Mode"}
+        },
+        "select": {
+            "relay_select": {"name": "Relay No. {relay_no}: {device_name}"}
+        },
+        "number": {
+            "dosage_relay": {"name": "Relay No. {relay_no} Dosage ({device_name})"}
+        },
+        "light": {
+            "dmx_light": {"name": "DMX {device_name}"}
         }
     }
 }

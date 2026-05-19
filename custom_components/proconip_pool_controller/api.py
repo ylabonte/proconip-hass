@@ -4,16 +4,14 @@ from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
-from proconip.definitions import (
+from proconip import (
     ConfigObject,
-    GetStateData,
-)
-
-from proconip.api import (
-    GetState,
-    RelaySwitch,
+    DmxControl,
     DosageControl,
+    GetDmxData,
+    GetState,
+    GetStateData,
+    RelaySwitch,
 )
 
 
@@ -38,16 +36,13 @@ class ProconipApiClient:
             username=self._username,
             password=self._password,
         )
-        self._get_state_api = GetState(
-            client_session=self._session, config=self._api_config
-        )
-        self._relay_switch_api = RelaySwitch(
-            client_session=self._session, config=self._api_config
-        )
+        self._get_state_api = GetState(client_session=self._session, config=self._api_config)
+        self._relay_switch_api = RelaySwitch(client_session=self._session, config=self._api_config)
         self._dosage_control_api = DosageControl(
             client_session=self._session, config=self._api_config
         )
-        self._most_recent_data = None
+        self._dmx_control_api = DmxControl(client_session=self._session, config=self._api_config)
+        self._most_recent_data: GetStateData | None = None
 
     async def async_get_data(
         self,
@@ -128,6 +123,14 @@ class ProconipApiClient:
             dosage_duration=duration_in_seconds,
         )
 
+    async def async_get_dmx(self) -> GetDmxData:
+        """Read the current DMX channel state from the controller."""
+        return await self._dmx_control_api.async_get_dmx()
+
+    async def async_set_dmx(self, dmx_data: GetDmxData) -> str:
+        """Push the full 16-channel DMX state to the controller."""
+        return await self._dmx_control_api.async_set(data=dmx_data)
+
 
 class ProconipConnectionTester:
     """Helper class for connection testing."""
@@ -136,14 +139,20 @@ class ProconipConnectionTester:
         """Initialize connection tester."""
         self.hass = hass
 
-    async def async_test_credentials(
-        self, url: str, username: str, password: str
-    ) -> None:
-        """Validate base url and credentials."""
+    async def async_test_credentials(self, url: str, username: str, password: str) -> GetStateData:
+        """Validate base url + credentials and return the parsed state.
+
+        The caller can introspect the returned ``GetStateData`` (e.g. for
+        ``is_dmx_enabled()``) to gate flow decisions on what the controller
+        reports — without paying a second HTTP round-trip. Raises the same
+        exceptions ``ProconipApiClient.async_get_data`` raises
+        (``BadCredentialsException``, ``BadStatusCodeException``,
+        ``ProconipApiException``, ``TimeoutException``).
+        """
         client = ProconipApiClient(
             base_url=url,
             username=username,
             password=password,
             hass=self.hass,
         )
-        await client.async_get_data()
+        return await client.async_get_data()

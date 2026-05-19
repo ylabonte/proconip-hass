@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from homeassistant.core import HomeAssistant
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 
 from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
@@ -64,8 +64,8 @@ class ProconipRedoxSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Redox Sensor class."""
 
     _attr_icon = "mdi:gauge"
-    _attr_name = "Redox sensor"
-    _attr_state_class = "measurement"
+    _attr_translation_key = "redox"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
 
     def __init__(
@@ -92,8 +92,8 @@ class ProconipPhSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP pH Sensor class."""
 
     _attr_icon = "mdi:gauge"
-    _attr_name = "pH sensor"
-    _attr_state_class = "measurement"
+    _attr_translation_key = "ph"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
 
     def __init__(
@@ -122,8 +122,9 @@ class ProconipTemperatureSensor(ProconipPoolControllerEntity, SensorEntity):
     _attr_icon = "mdi:thermometer"
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = "°C"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
+    _attr_translation_key = "temperature"
 
     def __init__(
         self,
@@ -136,7 +137,10 @@ class ProconipTemperatureSensor(ProconipPoolControllerEntity, SensorEntity):
         self._sensor_no = sensor_no
         self._sensor = self.coordinator.data.temperature_objects[self._sensor_no - 1]
         self._attr_entity_registry_visible_default = self._sensor.name != "n.a."
-        self._attr_name = f"Temperature No. {sensor_no}: {self._sensor.name}"
+        self._attr_translation_placeholders = {
+            "sensor_no": str(sensor_no),
+            "device_name": self._sensor.name,
+        }
         self._attr_unique_id = f"temperature_{sensor_no}_{instance_id}"
 
     @property
@@ -149,8 +153,9 @@ class ProconipAnalogSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Analog Sensor class."""
 
     _attr_icon = "mdi:sine-wave"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
+    _attr_translation_key = "analog"
 
     def __init__(
         self,
@@ -163,7 +168,10 @@ class ProconipAnalogSensor(ProconipPoolControllerEntity, SensorEntity):
         self._adc_no = sensor_no
         self._adc = self.coordinator.data.analog_objects[self._adc_no - 1]
         self._attr_entity_registry_visible_default = self._adc.name != "n.a."
-        self._attr_name = f"Analog No. {sensor_no}: {self._adc.name}"
+        self._attr_translation_placeholders = {
+            "sensor_no": str(sensor_no),
+            "device_name": self._adc.name,
+        }
         self._attr_unique_id = f"analog_{sensor_no}_{instance_id}"
 
     @property
@@ -181,8 +189,9 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Digital Input Sensor class."""
 
     _attr_icon = "mdi:import"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
+    _attr_translation_key = "digital_input"
 
     def __init__(
         self,
@@ -197,15 +206,16 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
             self._digital_input_no - 1
         ]
         self._attr_entity_registry_visible_default = self._digital_input.name != "n.a."
-        self._attr_name = f"Digital Input No. {sensor_no}: {self._digital_input.name}"
+        self._attr_translation_placeholders = {
+            "sensor_no": str(sensor_no),
+            "device_name": self._digital_input.name,
+        }
         self._attr_unique_id = f"digital_input_{sensor_no}_{instance_id}"
 
     @property
     def native_value(self) -> float:
         """Return the native value of the sensor."""
-        return self.coordinator.data.digital_input_objects[
-            self._digital_input_no - 1
-        ].value
+        return self.coordinator.data.digital_input_objects[self._digital_input_no - 1].value
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -217,8 +227,9 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Canister Sensor class."""
 
     _attr_icon = "mdi:bottle-tonic-outline"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 1
+    _attr_translation_key = "canister"
 
     def __init__(
         self,
@@ -230,7 +241,7 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
         super().__init__(coordinator=coordinator)
         self._canister_no = canister_no
         self._canister = self.coordinator.data.canister_objects[self._canister_no - 1]
-        match (canister_no):
+        match canister_no:
             case 1:
                 self._attr_entity_registry_visible_default = (
                     self.coordinator.data.is_chlorine_dosage_enabled()
@@ -243,7 +254,7 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
                 self._attr_entity_registry_visible_default = (
                     self.coordinator.data.is_ph_plus_dosage_enabled()
                 )
-        self._attr_name = f"Canister {self._canister.name}"
+        self._attr_translation_placeholders = {"device_name": self._canister.name}
         self._attr_unique_id = f"canister_{canister_no}_{instance_id}"
 
     @property
@@ -261,8 +272,9 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
     """ProCon.IP Canister Consumption Sensor class."""
 
     _attr_icon = "mdi:bottle-tonic-plus-outline"
-    _attr_state_class = "measurement"
+    _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_suggested_display_precision = 2
+    _attr_translation_key = "canister_consumption"
 
     def __init__(
         self,
@@ -273,10 +285,8 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
         """Initialize new temperature sensor."""
         super().__init__(coordinator=coordinator)
         self._canister_no = canister_no
-        self._canister = self.coordinator.data.consumption_objects[
-            self._canister_no - 1
-        ]
-        match (canister_no):
+        self._canister = self.coordinator.data.consumption_objects[self._canister_no - 1]
+        match canister_no:
             case 1:
                 self._attr_entity_registry_visible_default = (
                     self.coordinator.data.is_chlorine_dosage_enabled()
@@ -289,7 +299,7 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
                 self._attr_entity_registry_visible_default = (
                     self.coordinator.data.is_ph_plus_dosage_enabled()
                 )
-        self._attr_name = f"Canister consumption {self._canister.name}"
+        self._attr_translation_placeholders = {"device_name": self._canister.name}
         self._attr_unique_id = f"canister_consumption_{canister_no}_{instance_id}"
 
     @property
@@ -307,6 +317,7 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
     """ProCon.IP Relay State Sensor class."""
 
     _attr_icon = "mdi:light-switch"
+    _attr_translation_key = "relay_state"
 
     def __init__(
         self,
@@ -318,10 +329,13 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
         super().__init__(coordinator=coordinator)
         self._relay_id = relay_no - 1
         self._relay = self.coordinator.data.get_relay(relay_id=self._relay_id)
-        self._attr_entity_registry_visible_default = (
-            not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+        self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
+            relay_id=self._relay_id
         )
-        self._attr_name = f"Relay No. {relay_no} ({self._relay.name}) State"
+        self._attr_translation_placeholders = {
+            "relay_no": str(relay_no),
+            "device_name": self._relay.name,
+        }
         self._attr_unique_id = f"relay_state_{relay_no}_{instance_id}"
 
     @property

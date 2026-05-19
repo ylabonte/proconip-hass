@@ -11,25 +11,35 @@ on:
     branches:
       - "main"
 
+concurrency:
+  # Stable per workflow + ref so superseded runs for the same branch/PR
+  # are cancelled; including github.run_id would make every group unique
+  # and `cancel-in-progress` ineffective.
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  hassfest: # https://developers.home-assistant.io/blog/2020/04/16/hassfest
+  hassfest:
     name: "Hassfest Validation"
     runs-on: "ubuntu-latest"
     steps:
         - name: "Checkout the repository"
-          uses: "actions/checkout@v4.1.5"
+          uses: actions/checkout@v6
 
         - name: "Run hassfest validation"
-          uses: "home-assistant/actions/hassfest@master"
+          uses: home-assistant/actions/hassfest@master
 
-  hacs: # https://github.com/hacs/action
+  hacs:
     name: "HACS Validation"
     runs-on: "ubuntu-latest"
     steps:
         - name: "Checkout the repository"
-          uses: "actions/checkout@v4.1.5"
+          uses: actions/checkout@v6
 
         - name: "Run HACS validation"
-          uses: "hacs/action@main"
+          uses: hacs/action@main
           with:
             category: "integration"

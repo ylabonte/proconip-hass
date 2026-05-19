@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from homeassistant.core import HomeAssistant
+from typing import Any
+
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.components.switch import SwitchEntity, SwitchDeviceClass
 
 from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
@@ -16,11 +18,9 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_devices: AddEntitiesCallback
 ) -> None:
     """Set up the switch platform."""
-    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
-        entry.entry_id
-    ]
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     number_of_relays = 16 if coordinator.data.is_relay_extension_enabled() else 8
-    relays = []
+    relays: list[ProconipPoolControllerEntity] = []
     for i in range(number_of_relays):
         relays.append(
             ProconipPoolControllerRelaySwitch(
@@ -42,6 +42,7 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
     """ProCon.IP Pool Controller relay switch class."""
 
     _attr_device_class = SwitchDeviceClass.SWITCH
+    _attr_translation_key = "relay"
 
     def __init__(
         self,
@@ -55,18 +56,21 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
         self._attr_available = available
         self._relay_id = relay_no - 1
         self._relay = coordinator.data.get_relay(relay_id=self._relay_id)
-        self._attr_entity_registry_visible_default = (
-            not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+        self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
+            relay_id=self._relay_id
         )
-        self._attr_name = f"Relay No. {relay_no} ({self._relay.name})"
+        self._attr_translation_placeholders = {
+            "relay_no": str(relay_no),
+            "device_name": self._relay.name,
+        }
         self._attr_unique_id = f"relay_{relay_no}_{instance_id}"
 
-    async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch."""
         await self.coordinator.client.async_switch_on(relay_id=self._relay_id)
         await self.coordinator.async_request_refresh()
 
-    async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch."""
         await self.coordinator.client.async_switch_off(relay_id=self._relay_id)
         await self.coordinator.async_request_refresh()
@@ -81,6 +85,7 @@ class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity
     """Proconip auto-mode switch class."""
 
     _attr_device_class = SwitchDeviceClass.SWITCH
+    _attr_translation_key = "relay_auto_mode"
 
     def __init__(
         self,
@@ -92,18 +97,21 @@ class ProconipPoolControllerRelayMode(ProconipPoolControllerEntity, SwitchEntity
         super().__init__(coordinator=coordinator)
         self._relay_id = relay_no - 1
         self._relay = coordinator.data.get_relay(relay_id=self._relay_id)
-        self._attr_entity_registry_visible_default = (
-            not self.coordinator.data.is_dosage_relay(relay_id=self._relay_id)
+        self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
+            relay_id=self._relay_id
         )
-        self._attr_name = f"Relay No. {relay_no} ({self._relay.name}) Auto-Mode"
+        self._attr_translation_placeholders = {
+            "relay_no": str(relay_no),
+            "device_name": self._relay.name,
+        }
         self._attr_unique_id = f"relay_{relay_no}_auto_mode_{instance_id}"
 
-    async def async_turn_on(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_on(self, **kwargs: Any) -> None:
         """Set relay to auto mode."""
         await self.coordinator.client.async_switch_to_auto(relay_id=self._relay_id)
         await self.coordinator.async_request_refresh()
 
-    async def async_turn_off(self, **kwargs) -> None:  # pylint: disable=unused-argument
+    async def async_turn_off(self, **kwargs: Any) -> None:
         """Set relay to manual mode."""
         if self._relay.is_on():
             await self.coordinator.client.async_switch_on(relay_id=self._relay_id)

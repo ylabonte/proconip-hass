@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.12
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        # Use the repo .venv binary explicitly (same pattern as
+        # scripts/lint and scripts/develop) so `pre-commit run
+        # --all-files` works in a fresh shell without `. .venv/bin/
+        # activate` AND can't accidentally pick up a globally-
+        # installed mypy whose version drifted from our pin. The
+        # alternative — `language: python` with `additional_
+        # dependencies` — would require duplicating our [test] extra
+        # (mypy needs to resolve `homeassistant.*` imports) in this
+        # file, which would drift from pyproject.toml.
+        entry: .venv/bin/mypy
+        language: system
+        types: [python]
+        files: ^custom_components/
+        pass_filenames: false
+        args: [custom_components/proconip_pool_controller]
