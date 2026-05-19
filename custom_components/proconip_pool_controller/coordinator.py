@@ -97,6 +97,13 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
 
         if data.is_dmx_enabled() and self.dmx_lights_configured:
             await self._maybe_refresh_dmx_shadow()
+        elif self._dmx_shadow is not None:
+            # DMX flipped off on the controller (or got disabled while the
+            # integration was running). Drop the shadow so light entities
+            # report `available = False` rather than keeping writes flowing
+            # against a DMX-disabled controller.
+            LOGGER.info("Controller reports DMX as disabled; clearing local DMX shadow.")
+            self._dmx_shadow = None
 
         return data
 

@@ -139,6 +139,28 @@ async def test_quiet_window_suppresses_dmx_from_poll(
     assert coordinator._dmx_shadow is fresh_dmx
 
 
+async def test_dmx_shadow_cleared_when_controller_disables_dmx(
+    hass: HomeAssistant,
+    dmx_config_entry: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+    mock_dmx_endpoint: aioresponses,
+) -> None:
+    """If a controller previously reported DMX enabled then disables it, the
+    cached shadow must be dropped so light entities stop being available."""
+    assert await hass.config_entries.async_setup(dmx_config_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = hass.data[DOMAIN][dmx_config_entry.entry_id]
+
+    # Pretend a previous poll seeded a shadow while DMX was still enabled.
+    sentinel_shadow = AsyncMock(name="stale_shadow")
+    coordinator._dmx_shadow = sentinel_shadow
+
+    # Force one update — the fixture's GetState.csv reports DMX disabled, so
+    # the coordinator should drop the shadow on this poll.
+    await coordinator.async_refresh()
+    assert coordinator.dmx_shadow is None
+
+
 async def test_flush_failure_logs_and_does_not_crash(
     hass: HomeAssistant,
     dmx_config_entry: MockConfigEntry,

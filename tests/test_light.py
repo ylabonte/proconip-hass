@@ -67,7 +67,7 @@ def dmx_lights_entry(hass: HomeAssistant) -> MockConfigEntry:
 async def test_dmx_light_entities_created(
     hass: HomeAssistant,
     dmx_lights_entry: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    mock_state_endpoint_dmx_on: aioresponses,
     mock_dmx_endpoint: aioresponses,
 ) -> None:
     assert await hass.config_entries.async_setup(dmx_lights_entry.entry_id)
@@ -81,7 +81,7 @@ async def test_dmx_light_entities_created(
 async def test_dimmer_turn_on_writes_channel_value(
     hass: HomeAssistant,
     dmx_lights_entry: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    mock_state_endpoint_dmx_on: aioresponses,
     mock_dmx_endpoint: aioresponses,
 ) -> None:
     assert await hass.config_entries.async_setup(dmx_lights_entry.entry_id)
@@ -107,7 +107,7 @@ async def test_dimmer_turn_on_writes_channel_value(
 async def test_rgb_color_round_trip(
     hass: HomeAssistant,
     dmx_lights_entry: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    mock_state_endpoint_dmx_on: aioresponses,
     mock_dmx_endpoint: aioresponses,
 ) -> None:
     assert await hass.config_entries.async_setup(dmx_lights_entry.entry_id)
@@ -135,7 +135,7 @@ async def test_rgb_color_round_trip(
 async def test_rgb_brightness_only_preserves_hue_and_targets_max_channel(
     hass: HomeAssistant,
     dmx_lights_entry: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    mock_state_endpoint_dmx_on: aioresponses,
     mock_dmx_endpoint: aioresponses,
 ) -> None:
     """Brightness change on an on RGB light scales so max channel == brightness.
@@ -181,7 +181,7 @@ async def test_rgb_brightness_only_preserves_hue_and_targets_max_channel(
 async def test_rgbw_turn_off(
     hass: HomeAssistant,
     dmx_lights_entry: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    mock_state_endpoint_dmx_on: aioresponses,
     mock_dmx_endpoint: aioresponses,
 ) -> None:
     assert await hass.config_entries.async_setup(dmx_lights_entry.entry_id)
