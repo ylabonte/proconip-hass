@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from aioresponses import aioresponses
 from homeassistant.const import SERVICE_TURN_OFF, SERVICE_TURN_ON
 from homeassistant.core import HomeAssistant
@@ -48,8 +49,10 @@ async def test_switch_turn_on_calls_api(
         None,
     )
     if candidate is None:
-        # All relays are dosage relays (unusual fixture), skip gracefully
-        return
+        # All relays are dosage relays (unusual fixture) — no plain relay
+        # switch to exercise. Skip so the test report shows the omission
+        # explicitly instead of silently passing.
+        pytest.skip("Fixture exposes no plain (non-dosage) relay switch to toggle")
     await hass.services.async_call(
         "switch",
         SERVICE_TURN_ON,
@@ -90,7 +93,7 @@ async def test_switch_turn_off_calls_api(
         None,
     )
     if candidate is None:
-        return
+        pytest.skip("Fixture exposes no plain (non-dosage) relay switch to toggle")
     await hass.services.async_call(
         "switch",
         SERVICE_TURN_OFF,
