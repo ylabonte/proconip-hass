@@ -372,6 +372,29 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
     # config-entry reload to refresh `coordinator.data`.
     _latest_tested_state: Any = None
 
+    def _dmx_currently_available(self) -> bool:
+        """True if the controller is reporting DMX enabled *right now*.
+
+        Preference order: (1) the freshest credentials-test state from
+        this options session (wins over coordinator.data if the user
+        just pointed at a different controller), (2) the live
+        coordinator's last successful poll. Unhealthy coordinator (or
+        no fresh test state) → False.
+
+        Distinct from `_show_dmx_menu_entry`: the menu entry can still
+        appear in orphan-management mode when DMX is currently off, but
+        actions that *require* DMX (e.g. adding a new light) gate on
+        this method.
+        """
+        if self._latest_tested_state is not None:
+            return bool(self._latest_tested_state.is_dmx_enabled())
+        coordinator: ProconipPoolControllerDataUpdateCoordinator | None = self.hass.data.get(
+            DOMAIN, {}
+        ).get(self.config_entry.entry_id)
+        if coordinator is None or not coordinator.last_update_success:
+            return False
+        return coordinator.data.is_dmx_enabled()
+
     def _show_dmx_menu_entry(self) -> bool:
         """Whether the top-level menu should include the DMX-lights entry.
 
@@ -380,9 +403,8 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
         - The entry already has configured DMX lights — even if the
           controller now reports DMX as disabled, the user needs a way
           to manage/remove these orphans via the UI.
-        - OR `is_dmx_enabled()` is reported True by, in order of
-          preference: (1) the freshest credentials-test state from this
-          options session, or (2) the live coordinator's last poll.
+        - OR DMX is currently available on the controller (see
+          `_dmx_currently_available`).
 
         Unhealthy coordinator (no recent successful poll) and no
         fresh test state, with no existing lights → hide the entry.
@@ -392,16 +414,7 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
         options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
         if options.get(CONF_DMX_LIGHTS):
             return True
-        # Fresh test state from a just-saved Connection update wins over
-        # the (possibly pre-swap) coordinator data.
-        if self._latest_tested_state is not None:
-            return bool(self._latest_tested_state.is_dmx_enabled())
-        coordinator: ProconipPoolControllerDataUpdateCoordinator | None = self.hass.data.get(
-            DOMAIN, {}
-        ).get(self.config_entry.entry_id)
-        if coordinator is None or not coordinator.last_update_success:
-            return False
-        return coordinator.data.is_dmx_enabled()
+        return self._dmx_currently_available()
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -546,7 +559,14 @@ class ProconipPoolControllerOptionsFlowHandler(config_entries.OptionsFlow):
         t = await self._dmx_menu_strings()
         options = getattr(self, "_merged_options", None) or dict(self.config_entry.options)
         lights: list[dict] = list(options.get(CONF_DMX_LIGHTS, []))
-        menu: dict[str, str] = {"dmx_light_add": t.get("add_light", "Add light")}
+        menu: dict[str, str] = {}
+        # `Add light` only when DMX is currently available on the
+        # controller — when this submenu is reachable purely because
+        # orphan lights still exist (DMX got disabled after configuring
+        # them), the user should be able to manage/remove the orphans
+        # without piling on more nonfunctional entries.
+        if self._dmx_currently_available():
+            menu["dmx_light_add"] = t.get("add_light", "Add light")
         edit_template = t.get("edit_light_template", 'Edit "{name}" ({type} · ch {channel})')
         for light in lights:
             menu[f"dmx_light_edit_{light['slug']}"] = _format_light(edit_template, light)

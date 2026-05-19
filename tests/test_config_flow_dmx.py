@@ -74,10 +74,13 @@ async def test_dmx_light_add_happy_path(
 
 async def test_dmx_light_add_overlap_rejected(
     hass: HomeAssistant,
-    setup_integration: MockConfigEntry,
-    mock_state_endpoint: aioresponses,
+    setup_integration_dmx_on: MockConfigEntry,
 ) -> None:
-    entry = setup_integration
+    # DMX must be currently available so the `Add light` submenu entry is
+    # offered — orphan-management mode (DMX off + lights configured)
+    # intentionally hides it, see
+    # `test_dmx_lights_menu_hides_add_when_dmx_unavailable_with_orphans`.
+    entry = setup_integration_dmx_on
     # Pre-seed an existing light via direct options write
     hass.config_entries.async_update_entry(
         entry,
@@ -245,6 +248,41 @@ async def test_options_flow_shows_dmx_entry_when_orphan_lights_exist(
     assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "init"
     assert "dmx_lights_menu" in result["menu_options"]
+
+
+async def test_dmx_lights_menu_hides_add_when_dmx_unavailable_with_orphans(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """Orphan-management mode (DMX off + lights configured) must not show ``Add light``.
+
+    The submenu surfaces in this mode so users can manage/remove existing
+    lights — but offering to add more entries against a DMX-disabled
+    controller would just create more nonfunctional state. Edit/remove
+    rows must still appear so the existing lights remain manageable.
+    """
+    entry = setup_integration
+    _seed_one_light(hass, entry)
+    result_menu = await _open_dmx_lights_menu(hass, entry)
+    assert result_menu["type"] is FlowResultType.MENU
+    assert "dmx_light_add" not in result_menu["menu_options"], (
+        f"Add light must be hidden in orphan-management mode; got: {result_menu['menu_options']}"
+    )
+    # Edit + remove paths still available so the orphans can be cleaned up.
+    assert "dmx_light_edit_pool_main" in result_menu["menu_options"]
+    assert "dmx_lights_remove_menu" in result_menu["menu_options"]
+
+
+async def test_dmx_lights_menu_shows_add_when_dmx_currently_available(
+    hass: HomeAssistant,
+    setup_integration_dmx_on: MockConfigEntry,
+) -> None:
+    """The standard happy-path: DMX on → `Add light` is offered."""
+    entry = setup_integration_dmx_on
+    result_menu = await _open_dmx_lights_menu(hass, entry)
+    assert result_menu["type"] is FlowResultType.MENU
+    assert "dmx_light_add" in result_menu["menu_options"]
 
 
 async def test_dmx_light_edit_persists_changes_without_duplicating(
