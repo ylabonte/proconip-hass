@@ -146,8 +146,11 @@ source .venv/bin/activate
   depends on it. The current pattern in every entity module is to set
   `self._attr_unique_id = f"<stable_key>_{instance_id}"` *after*
   `super().__init__()` — keep that shape rather than relying on the
-  base class to append. (`ProconipPoolControllerEntity` only appends the
-  entry-id suffix when `_attr_unique_id` is still unset by the subclass.)
+  base class. (If a subclass leaves `_attr_unique_id` unset,
+  `ProconipPoolControllerEntity` falls back to just
+  `coordinator.config_entry_id` — *no* stable key — which collides
+  with every other entity in the same config entry. Always set your
+  own stable key.)
 
 ## Testing
 
