@@ -144,7 +144,10 @@ Releases are fully automated by [release-please](https://github.com/googleapis/r
 
 **Don't:** hand-edit `manifest.json:version` or `const.py:VERSION`. Both are owned by release-please's `extra-files` config. The marker comment on the `VERSION` line must stay verbatim.
 
-**Do:** bump `hacs.json:homeassistant` minimum if you start using newer HA APIs. Current minimum: **HA 2026.5.2**, Python **3.14+** (the HA pin comes from `proconip>=2.1.0` needing `aiohttp>=3.13.5`, first satisfied by HA 2026.5.x; CI matrix also runs Python 3.14 — see devcontainer image `python:dev-3.14` and `pyproject.toml:requires-python`).
+**Do:** bump `hacs.json:homeassistant` minimum if you start using newer HA APIs.
+
+- **Runtime minimum (what shipped users need): HA 2025.2.0, Python 3.13+.** That's the floor declared in `hacs.json` and `manifest.json` (`proconip>=2.1.1`). HA 2025.2.0 is the first release that required Python 3.13 (which `proconip` itself requires); its bundled `aiohttp` 3.11.x easily satisfies `proconip>=2.1.1`'s relaxed `aiohttp>=3.10` floor.
+- **Dev / CI minimum: Python 3.14.** Higher than the runtime floor because `pytest-homeassistant-custom-component` pulls in current HA Core (2026.5+) which itself requires 3.14.2+. See `.github/workflows/test.yml`, `.github/workflows/lint.yml`, `scripts/setup`, and the devcontainer image `python:dev-3.14`. `pyproject.toml` mypy sits on 3.14 for the same reason (mypy follows imports into HA's source, which uses PEP 758 syntax). `ruff target-version = "py313"` is what actually enforces our own source stays valid on 3.13.
 
 ### Conventional Commits — when to bump, when to be silent
 
