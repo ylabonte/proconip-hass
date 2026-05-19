@@ -57,16 +57,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Handle removal of an entry."""
+    # Shut the coordinator down *first* so the pending DMX-flush debounce
+    # cannot wake during the `async_unload_platforms` await window and
+    # POST a stale write against a controller that's about to disappear.
+    coordinator: ProconipPoolControllerDataUpdateCoordinator | None = hass.data.get(DOMAIN, {}).get(
+        entry.entry_id
+    )
+    if coordinator is not None:
+        await coordinator.async_shutdown()
+
     if unloaded := await hass.config_entries.async_unload_platforms(
         entry=entry, platforms=PLATFORMS
     ):
-        # Cancel any pending DMX flush task before dropping the coordinator
-        # so a queued write can't fire after the entry is gone.
-        coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
-            entry.entry_id
-        ]
-        await coordinator.async_shutdown()
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop(entry.entry_id, None)
     return unloaded
 
 
