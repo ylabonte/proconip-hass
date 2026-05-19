@@ -278,3 +278,76 @@ async def test_options_flow_shows_dmx_entry_when_dmx_enabled(
     # Unload the entry cleanly before test teardown
     assert await hass.config_entries.async_unload(config_entry.entry_id)
     await hass.async_block_till_done()
+
+
+async def test_options_flow_connection_reopen_uses_merged_options(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+    get_state_csv: str,
+) -> None:
+    """Re-opening the connection step after a successful submit seeds defaults
+    from the pending `_merged_options`, not the still-persisted entry options.
+
+    Without this, a second open would silently revert to the old URL/creds
+    and an unwitting re-submit would overwrite the pending changes before
+    `save_and_finish` ran.
+    """
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    original_url = config_entry.options[CONF_URL]
+    new_url = "http://192.0.2.99"
+    assert new_url != original_url
+
+    # Register the GetState mock for the new URL so credential validation
+    # against it succeeds (the fixture only registers the default URL).
+    mock_state_endpoint.get(
+        f"{new_url}/GetState.csv",
+        status=200,
+        body=get_state_csv,
+        repeat=True,
+    )
+
+    # Open options flow → top-level menu → pick "connection".
+    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    assert result["type"] is FlowResultType.MENU
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "connection"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "connection"
+
+    # Submit a new URL. The flow stashes the merged values into
+    # `_merged_options` and bounces back to the menu.
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        user_input={
+            CONF_URL: new_url,
+            CONF_USERNAME: config_entry.options[CONF_USERNAME],
+            CONF_PASSWORD: config_entry.options[CONF_PASSWORD],
+            CONF_SCAN_INTERVAL: config_entry.options[CONF_SCAN_INTERVAL],
+        },
+    )
+    # Successful submit → bounces back to the top-level menu.
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "init"
+
+    # Re-enter the connection step a second time *without* saving.
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], user_input={"next_step_id": "connection"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "connection"
+
+    # Defaults must reflect the pending merged options, not the
+    # persisted entry options (which still hold `original_url`).
+    schema_defaults = {
+        key.schema: key.default() for key in result["data_schema"].schema
+    }
+    assert schema_defaults[CONF_URL] == new_url
+    assert config_entry.options[CONF_URL] == original_url  # unchanged on disk
+
+    # Unload the entry cleanly before test teardown
+    assert await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.async_block_till_done()
