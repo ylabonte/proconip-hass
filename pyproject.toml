@@ -47,7 +47,19 @@ packages = []
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-extend-exclude = ["config/", ".devcontainer-lock.json"]
+# .gitignore has `custom_components` (originally intended to ignore
+# third-party integrations dropped into ./config/custom_components/),
+# which made ruff silently skip our own tracked integration source.
+# Opt out of gitignore-respect so the production code actually gets
+# linted; we list everything we want excluded explicitly below.
+respect-gitignore = false
+extend-exclude = [
+    ".devcontainer-lock.json",
+    ".venv/",
+    "config/",
+    "dist/",
+    "build/",
+]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "RET", "PTH"]

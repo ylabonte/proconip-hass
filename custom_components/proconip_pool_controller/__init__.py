@@ -17,7 +17,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 
 from .api import ProconipApiClient
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [

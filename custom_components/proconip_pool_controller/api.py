@@ -139,9 +139,7 @@ class ProconipConnectionTester:
         """Initialize connection tester."""
         self.hass = hass
 
-    async def async_test_credentials(
-        self, url: str, username: str, password: str
-    ) -> GetStateData:
+    async def async_test_credentials(self, url: str, username: str, password: str) -> GetStateData:
         """Validate base url + credentials and return the parsed state.
 
         The caller can introspect the returned ``GetStateData`` (e.g. for
