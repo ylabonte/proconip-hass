@@ -4,11 +4,23 @@ set -e
 
 cd "$(dirname "$0")/.."
 
+# Invoke the venv tools explicitly (mirroring scripts/develop) so
+# `scripts/setup && scripts/lint` works in a fresh shell without manual
+# `. .venv/bin/activate` — and so we never accidentally pick up an
+# unrelated globally-installed ruff/mypy that drifts from our pinned
+# tool versions.
+RUFF=".venv/bin/ruff"
+MYPY=".venv/bin/mypy"
+if [ ! -x "$RUFF" ] || [ ! -x "$MYPY" ]; then
+    echo "Error: $RUFF or $MYPY not found. Run scripts/setup first." >&2
+    exit 1
+fi
+
 echo "==> ruff check"
-ruff check .
+"$RUFF" check .
 
 echo "==> ruff format check"
-ruff format --check .
+"$RUFF" format --check .
 
 echo "==> mypy"
-mypy custom_components/proconip_pool_controller
+"$MYPY" custom_components/proconip_pool_controller
