@@ -36,9 +36,29 @@ echo "==> Using $PYTHON ($("$PYTHON" --version))"
 # also works when .venv is a mounted volume (as in our devcontainer), which
 # can't be removed with rm because the mount point itself is busy. `--clear`
 # wipes only the contents and recreates the venv structure inside.
+#
+# Rebuild when ANY of: no usable interpreter, broken interpreter, or
+# interpreter major.minor does not match the just-selected $PYTHON.
+# That last check matters when contributors upgrade Python on the host
+# (or move from 3.13 → 3.14) but kept their existing .venv: dep
+# resolution will fail otherwise, with a confusing pip error instead
+# of an obvious "rebuilt for new Python" log line.
+NEEDS_REBUILD=
 if [ ! -x .venv/bin/python ] || ! .venv/bin/python --version >/dev/null 2>&1; then
+    NEEDS_REBUILD=1
+    REBUILD_REASON="missing/broken interpreter"
+else
+    VENV_VER="$(.venv/bin/python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null)"
+    PY_VER="$("$PYTHON" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null)"
+    if [ "$VENV_VER" != "$PY_VER" ]; then
+        NEEDS_REBUILD=1
+        REBUILD_REASON="existing .venv uses Python $VENV_VER, selected $PYTHON is $PY_VER"
+    fi
+fi
+
+if [ -n "$NEEDS_REBUILD" ]; then
     if [ -d .venv ] && [ -n "$(ls -A .venv 2>/dev/null)" ]; then
-        echo "==> Existing .venv is empty or broken; clearing and recreating"
+        echo "==> Recreating .venv ($REBUILD_REASON)"
     else
         echo "==> Creating .venv"
     fi
