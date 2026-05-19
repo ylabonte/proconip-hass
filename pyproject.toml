@@ -36,7 +36,9 @@ test = [
     "pytest-homeassistant-custom-component>=0.13.316,<0.14",
     "aioresponses",
     "pytest-freezer",
-    "proconip>=2.1.0",
+    # Keep this in lockstep with custom_components/.../manifest.json so CI
+    # exercises the same library floor that HA actually installs at runtime.
+    "proconip>=2.1.1",
 ]
 
 [tool.setuptools]
