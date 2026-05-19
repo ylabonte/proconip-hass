@@ -48,11 +48,18 @@ async def test_auth_failure_marks_entry_for_reauth(
     assert config_entry.state is ConfigEntryState.SETUP_ERROR
 
 
-async def test_update_failure_keeps_entry_loaded(
+async def test_initial_update_failure_triggers_setup_retry(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     aio_mock: aioresponses,
 ) -> None:
+    """A 5xx on the first poll must put the entry in SETUP_RETRY, not LOADED.
+
+    The old name was misleading: it suggested the integration stayed loaded
+    after the failure, but `async_setup` actually returns False and HA
+    marks the entry for retry — which is what we want (HA will re-attempt
+    setup on its own backoff schedule).
+    """
     aio_mock.get(
         "http://192.0.2.10/GetState.csv",
         status=500,
