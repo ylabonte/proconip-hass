@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Home Assistant **custom integration** (HACS-distributed) for the [ProCon.IP pool controller](https://www.pooldigital.de). The integration code lives in `custom_components/proconip_pool_controller/` and follows the [@ludeeus/integration_blueprint](https://github.com/ludeeus/integration_blueprint) pattern.
 
-All HTTP/CSV parsing, relay/dosage commands, and DMX read/writes are delegated to the **`proconip` PyPI package** (declared in `manifest.json` requirements as `proconip>=2.1.0`). When a question is about *what data exists* or *how a call works*, the answer is in that library, not here:
+All HTTP/CSV parsing, relay/dosage commands, and DMX read/writes are delegated to the **`proconip` PyPI package** (declared in `manifest.json` requirements as `proconip>=2.1.1`). When a question is about *what data exists* or *how a call works*, the answer is in that library, not here:
 
 - Source: https://github.com/ylabonte/proconip-pypi
 - Docs: https://ylabonte.github.io/proconip-pypi/
@@ -68,7 +68,7 @@ All scripts cd into the repo root themselves; run them from anywhere.
 
 | Command | What it does |
 |---|---|
-| `scripts/setup` | Creates `.venv` (Python ≥ 3.13), `pip install -e ".[dev,test]"` + `colorlog`, then runs `scripts/install-ha-deps.py` to pre-install HA's eager-import deps (parsed from each `manifest.json`). |
+| `scripts/setup` | Creates `.venv` (Python ≥ 3.14 — dev/CI floor, see "Release / version bumping" below for why), `pip install -e ".[dev,test]"` + `colorlog`, then runs `scripts/install-ha-deps.py` to pre-install HA's eager-import deps (parsed from each `manifest.json`). Rebuilds the venv if its existing interpreter doesn't match the just-selected `$PYTHON`. |
 | `scripts/install-ha-deps.py` | Walks HA's bundled `components/<name>/manifest.json` to install the pip packages our slim config + HA's `_base_components()` need. The source of truth is HA's manifests — *do not hand-curate a list of pip packages here.* |
 | `scripts/develop` | Boots a local Home Assistant on port 8123 with `--skip-pip` (everything was pre-installed by setup). Use this to manually verify changes. |
 | `scripts/lint` | Ruff lint and format, mypy type-check. |

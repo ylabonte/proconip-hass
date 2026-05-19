@@ -22,7 +22,7 @@ All contributions are released under the project's [MIT license](LICENSE).
 
 ### Option A — VS Code Dev Container (recommended)
 
-The repo ships a fully-configured devcontainer with Python 3.13, a
+The repo ships a fully-configured devcontainer with Python 3.14, a
 ready-to-run Home Assistant, and all dev/test tooling preinstalled.
 
 1. Install [Docker](https://docs.docker.com/get-docker/) and the
@@ -75,7 +75,7 @@ external access). Restart the auto-started instance with `bash
 
 Requirements:
 
-- **Python ≥ 3.13** (we test on 3.13 and 3.14)
+- **Python ≥ 3.14** for development. (Runtime ships fine on Python ≥ 3.13 — see `hacs.json` — but `[dev,test]` pulls in `pytest-homeassistant-custom-component`, which pulls current HA Core, which itself requires 3.14.2+.)
 - Git
 - A terminal
 
@@ -89,8 +89,8 @@ scripts/setup
 
 `scripts/setup` will:
 
-- Pick the newest Python ≥ 3.13 it can find (`python3.14`, then
-  `python3.13`, then `python3`). Override with
+- Pick the newest Python ≥ 3.14 it can find (`python3.14`, then
+  `python3`). Override with
   `PYTHON=python3.X scripts/setup` to force a specific interpreter.
 - Create (or rebuild, if broken) `.venv` in the repo root.
 - Install the dev + test extras via `pip install -e ".[dev,test]"`.
