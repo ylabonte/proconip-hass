@@ -140,7 +140,10 @@ class ProconipProblemSeverityThresholdSelect(
         return self.coordinator.problem_severity_threshold
 
     async def async_select_option(self, option: str) -> None:
-        """Store the new threshold and re-evaluate the Problem binary_sensor."""
+        """Store the new threshold and re-evaluate the Problem binary_sensor.
+
+        `async_update_listeners()` re-renders every coordinator entity including
+        this select, so no separate `async_write_ha_state()` is needed.
+        """
         self.coordinator.problem_severity_threshold = option
-        self.async_write_ha_state()
         self.coordinator.async_update_listeners()
