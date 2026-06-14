@@ -85,6 +85,30 @@ def mock_state_endpoint_dmx_on(aio_mock: aioresponses, get_state_dmx_on_csv: str
 
 
 @pytest.fixture
+def get_state_ntp_fault_csv() -> str:
+    """Variant of ``get_state.csv`` with SYSINFO[4]=65536 (NTP fault, no lamp bits).
+
+    Use ``mock_state_endpoint_ntp_fault`` when a test needs an NTP-only fault:
+    ``ntp_synced`` False but no green/yellow/red severity.
+    """
+    return (FIXTURES_DIR / "get_state_ntp_fault.csv").read_text()
+
+
+@pytest.fixture
+def mock_state_endpoint_ntp_fault(
+    aio_mock: aioresponses, get_state_ntp_fault_csv: str
+) -> aioresponses:
+    """``mock_state_endpoint`` variant serving an NTP-fault SYSINFO row."""
+    aio_mock.get(
+        f"{BASE_URL}/GetState.csv",
+        status=200,
+        body=get_state_ntp_fault_csv,
+        repeat=True,
+    )
+    return aio_mock
+
+
+@pytest.fixture
 def mock_dmx_endpoint(aio_mock: aioresponses, get_dmx_csv: str) -> aioresponses:
     aio_mock.get(
         f"{BASE_URL}/GetDmx.csv",

@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -53,6 +56,7 @@ async def async_setup_entry(
             ProconipDmxExtensionEnabledBinarySensor(
                 coordinator=coordinator, instance_id=entry.entry_id
             ),
+            ProconipProblemBinarySensor(coordinator=coordinator, instance_id=entry.entry_id),
         ]
     )
 
@@ -289,3 +293,31 @@ class ProconipDmxExtensionEnabledBinarySensor(ProconipPoolControllerEntity, Bina
     def is_on(self) -> bool:
         """Return true if the binary_sensor is on."""
         return self.coordinator.data.is_dmx_extension_enabled()
+
+
+class ProconipProblemBinarySensor(ProconipPoolControllerEntity, BinarySensorEntity):
+    """ProCon.IP problem binary_sensor for the fault state (SYSINFO[4]).
+
+    On when the active GUI-warning-lamp severity is at or above the threshold
+    chosen via the severity-threshold select (see `coordinator.is_problem_active`).
+
+    Only the green/yellow/red warning lamps count. A pure NTP fault (the clock
+    bit set with no lamp) deliberately does NOT trip this sensor — it is surfaced
+    via the `fault_state` sensor's `ntp_synced` attribute instead, so users who
+    care about NTP can automate on that without the Problem sensor flapping on a
+    clock-sync blip.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    _attr_translation_key = "problem"
+
+    def __init__(
+        self, coordinator: ProconipPoolControllerDataUpdateCoordinator, instance_id: str
+    ) -> None:
+        super().__init__(coordinator=coordinator)
+        self._attr_unique_id = f"problem_{instance_id}"
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if the fault severity reaches the configured threshold."""
+        return self.coordinator.is_problem_active

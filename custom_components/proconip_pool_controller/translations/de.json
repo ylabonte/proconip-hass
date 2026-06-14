@@ -100,11 +100,22 @@
             "high_bus_load_enabled": {"name": "Hohe Buslast aktiviert"},
             "flow_sensor_enabled": {"name": "Durchflusssensor aktiviert"},
             "repeated_mails_enabled": {"name": "Wiederholte E-Mails aktiviert"},
-            "dmx_extension_enabled": {"name": "DMX-Erweiterung aktiviert"}
+            "dmx_extension_enabled": {"name": "DMX-Erweiterung aktiviert"},
+            "problem": {"name": "Problem"}
         },
         "sensor": {
             "redox": {"name": "Redox-Sensor"},
             "ph": {"name": "pH-Sensor"},
+            "fault_state": {
+                "name": "Fehlerzustand",
+                "state": {
+                    "ok": "OK",
+                    "info": "Info (grün)",
+                    "warning": "Warnung (gelb)",
+                    "error": "Fehler (rot)",
+                    "ntp_fault": "NTP-Fehler (keine Zeit)"
+                }
+            },
             "temperature": {"name": "Temperatur Nr. {sensor_no}: {device_name}"},
             "analog": {"name": "Analog Nr. {sensor_no}: {device_name}"},
             "digital_input": {"name": "Digitaler Eingang Nr. {sensor_no}: {device_name}"},
@@ -117,7 +128,15 @@
             "relay_auto_mode": {"name": "Relais Nr. {relay_no} ({device_name}) Auto-Modus"}
         },
         "select": {
-            "relay_select": {"name": "Relais Nr. {relay_no}: {device_name}"}
+            "relay_select": {"name": "Relais Nr. {relay_no}: {device_name}"},
+            "problem_severity_threshold": {
+                "name": "Schwelle für Problemmeldung",
+                "state": {
+                    "green": "Grün (Info)",
+                    "yellow": "Gelb (Warnung)",
+                    "red": "Rot (Fehler)"
+                }
+            }
         },
         "number": {
             "dosage_relay": {"name": "Relais Nr. {relay_no} Dosierung ({device_name})"}

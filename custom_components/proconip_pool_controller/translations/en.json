@@ -100,11 +100,22 @@
             "high_bus_load_enabled": {"name": "High Bus Load enabled"},
             "flow_sensor_enabled": {"name": "Flow Sensor enabled"},
             "repeated_mails_enabled": {"name": "Repeated Mails enabled"},
-            "dmx_extension_enabled": {"name": "DMX Extension enabled"}
+            "dmx_extension_enabled": {"name": "DMX Extension enabled"},
+            "problem": {"name": "Problem"}
         },
         "sensor": {
             "redox": {"name": "Redox sensor"},
             "ph": {"name": "pH sensor"},
+            "fault_state": {
+                "name": "Fault state",
+                "state": {
+                    "ok": "OK",
+                    "info": "Info (green)",
+                    "warning": "Warning (yellow)",
+                    "error": "Error (red)",
+                    "ntp_fault": "NTP fault (no time)"
+                }
+            },
             "temperature": {"name": "Temperature No. {sensor_no}: {device_name}"},
             "analog": {"name": "Analog No. {sensor_no}: {device_name}"},
             "digital_input": {"name": "Digital Input No. {sensor_no}: {device_name}"},
@@ -117,7 +128,15 @@
             "relay_auto_mode": {"name": "Relay No. {relay_no} ({device_name}) Auto-Mode"}
         },
         "select": {
-            "relay_select": {"name": "Relay No. {relay_no}: {device_name}"}
+            "relay_select": {"name": "Relay No. {relay_no}: {device_name}"},
+            "problem_severity_threshold": {
+                "name": "Problem severity threshold",
+                "state": {
+                    "green": "Green (info)",
+                    "yellow": "Yellow (warning)",
+                    "red": "Red (error)"
+                }
+            }
         },
         "number": {
             "dosage_relay": {"name": "Relay No. {relay_no} Dosage ({device_name})"}

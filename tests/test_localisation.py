@@ -15,18 +15,25 @@ in here too.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 from aioresponses import aioresponses
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.proconip_pool_controller.const import DOMAIN
+from custom_components.proconip_pool_controller.const import DOMAIN, FAULT_STATE_OPTIONS
 
 # Device-name prefix that HA composes onto every entity's friendly_name
 # when `_attr_has_entity_name = True` is set on the base entity. Matches
 # `NAME` from the integration's `const.py`.
 DEVICE_PREFIX = "ProCon.IP Pool Controller"
+
+TRANSLATIONS_DIR = (
+    Path(__file__).parents[1] / "custom_components" / "proconip_pool_controller" / "translations"
+)
 
 
 @pytest.mark.parametrize(
@@ -80,3 +87,68 @@ async def test_entity_friendly_names_follow_language(
         f"{relay_state_1.attributes['friendly_name']!r}, expected "
         f"{expected_relay_state_1!r}"
     )
+
+
+@pytest.mark.parametrize(
+    "language,expected_names",
+    [
+        (
+            "en",
+            {
+                ("sensor", "fault_state"): f"{DEVICE_PREFIX} Fault state",
+                ("binary_sensor", "problem"): f"{DEVICE_PREFIX} Problem",
+                (
+                    "select",
+                    "problem_severity_threshold",
+                ): f"{DEVICE_PREFIX} Problem severity threshold",
+            },
+        ),
+        (
+            "de",
+            {
+                ("sensor", "fault_state"): f"{DEVICE_PREFIX} Fehlerzustand",
+                ("binary_sensor", "problem"): f"{DEVICE_PREFIX} Problem",
+                (
+                    "select",
+                    "problem_severity_threshold",
+                ): f"{DEVICE_PREFIX} Schwelle für Problemmeldung",
+            },
+        ),
+    ],
+)
+async def test_fault_state_entity_friendly_names_follow_language(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+    language: str,
+    expected_names: dict[tuple[str, str], str],
+) -> None:
+    """The new fault-state entities resolve translated friendly names per language."""
+    hass.config.language = language
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    instance_id = config_entry.entry_id
+    for (platform, key), expected in expected_names.items():
+        eid = registry.async_get_entity_id(platform, DOMAIN, f"{key}_{instance_id}")
+        assert eid, f"[{language}] {platform}/{key} not registered"
+        state = hass.states.get(eid)
+        assert state is not None
+        assert state.attributes["friendly_name"] == expected, (
+            f"[{language}] {platform}/{key}: got "
+            f"{state.attributes['friendly_name']!r}, expected {expected!r}"
+        )
+
+
+@pytest.mark.parametrize("language", ["en", "de"])
+def test_fault_state_enum_states_translated(language: str) -> None:
+    """Every fault_state enum option has a non-empty translated label per language.
+
+    The sensor's *state value* is a stable key; the frontend renders it via these
+    `state` labels, so each language must define all of them.
+    """
+    data = json.loads((TRANSLATIONS_DIR / f"{language}.json").read_text(encoding="utf-8"))
+    states = data["entity"]["sensor"]["fault_state"]["state"]
+    missing = [key for key in FAULT_STATE_OPTIONS if not states.get(key)]
+    assert not missing, f"[{language}] fault_state state labels missing/empty: {missing}"

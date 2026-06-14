@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, FAULT_STATE_OPTIONS
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 from .entity import ProconipPoolControllerEntity
 
@@ -20,6 +23,7 @@ async def async_setup_entry(
     sensor_entities = [
         ProconipRedoxSensor(coordinator=coordinator, instance_id=entry.entry_id),
         ProconipPhSensor(coordinator=coordinator, instance_id=entry.entry_id),
+        ProconipFaultStateSensor(coordinator=coordinator, instance_id=entry.entry_id),
     ]
     for i in range(5):
         sensor_entities.append(
@@ -342,3 +346,42 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
     def native_value(self) -> str:
         """Return the native value of the sensor."""
         return self.coordinator.data.get_relay(relay_id=self._relay_id).display_value
+
+
+class ProconipFaultStateSensor(ProconipPoolControllerEntity, SensorEntity):
+    """Diagnostic enum sensor for the controller's fault state (SYSINFO[4]).
+
+    Reports a stable, language-agnostic key (`ok`/`info`/`warning`/`error` for
+    the green/yellow/red GUI warning lamps, `ntp_fault` for an NTP-only fault),
+    translated per `hass.config.language` via the `state` block in
+    `translations/<lang>.json`. The raw value and decoded flags stay on the
+    attributes for templates/automations.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = FAULT_STATE_OPTIONS
+    _attr_translation_key = "fault_state"
+    _attr_icon = "mdi:alert-circle-outline"
+
+    def __init__(
+        self, coordinator: ProconipPoolControllerDataUpdateCoordinator, instance_id: str
+    ) -> None:
+        super().__init__(coordinator=coordinator)
+        self._attr_unique_id = f"fault_state_{instance_id}"
+
+    @property
+    def native_value(self) -> str:
+        """Return the stable fault-state key (highest lamp severity, else NTP/ok)."""
+        rank = self.coordinator.fault_severity_rank
+        if rank:
+            return {1: "info", 2: "warning", 3: "error"}[rank]
+        return "ok" if self.coordinator.fault_flags["ntp_synced"] else "ntp_fault"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the raw value plus the coordinator's decoded fault flags."""
+        return {
+            "raw": self.coordinator.data.ntp_fault_state,
+            **self.coordinator.fault_flags,
+        }
