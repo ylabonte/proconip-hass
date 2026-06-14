@@ -10,7 +10,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, NTP_FAULT_BIT, PROBLEM_SEVERITY_BITS
+from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 from .entity import ProconipPoolControllerEntity
 
@@ -373,12 +373,8 @@ class ProconipFaultStateSensor(ProconipPoolControllerEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Expose the raw value and the individual decoded bits."""
-        raw = self.coordinator.data.ntp_fault_state
+        """Expose the raw value plus the coordinator's decoded fault flags."""
         return {
-            "raw": raw,
-            "green": bool(raw & PROBLEM_SEVERITY_BITS["green"]),
-            "yellow": bool(raw & PROBLEM_SEVERITY_BITS["yellow"]),
-            "red": bool(raw & PROBLEM_SEVERITY_BITS["red"]),
-            "ntp_synced": not (raw & NTP_FAULT_BIT),
+            "raw": self.coordinator.data.ntp_fault_state,
+            **self.coordinator.fault_flags,
         }

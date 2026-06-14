@@ -29,9 +29,9 @@ from .const import (
     DMX_QUIET_WINDOW_SECONDS,
     DOMAIN,
     LOGGER,
+    NTP_FAULT_BIT,
     PROBLEM_SEVERITY_BITS,
     PROBLEM_SEVERITY_DEFAULT,
-    PROBLEM_SEVERITY_OPTIONS,
 )
 
 
@@ -93,24 +93,38 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         )
 
     @property
-    def fault_severity_rank(self) -> int:
-        """Highest active GUI-warning-lamp severity in the fault state (SYSINFO[4]).
+    def fault_flags(self) -> dict[str, bool]:
+        """Decode the fault state (SYSINFO[4]) into individual flags.
 
-        Returns 0 when no lamp bit is set, otherwise the 1-based position of
-        the most severe active lamp in `PROBLEM_SEVERITY_OPTIONS`
-        (green=1, yellow=2, red=3).
+        Single decode site for the green/yellow/red GUI-warning lamps plus the
+        NTP-synced state, so the diagnostic sensor and the Problem binary_sensor
+        can't drift apart on the bit semantics.
         """
         raw = self.data.ntp_fault_state
-        rank = 0
-        for level, bit in PROBLEM_SEVERITY_BITS.items():
-            if raw & bit:
-                rank = max(rank, PROBLEM_SEVERITY_OPTIONS.index(level) + 1)
-        return rank
+        flags = {level: bool(raw & bit) for level, bit in PROBLEM_SEVERITY_BITS.items()}
+        flags["ntp_synced"] = not (raw & NTP_FAULT_BIT)
+        return flags
+
+    @property
+    def fault_severity_rank(self) -> int:
+        """Highest active GUI-warning-lamp severity (0 none, 1 green, 2 yellow, 3 red).
+
+        The lamp bits (0x1/0x2/0x4) are contiguous in ascending severity, so the
+        position of the highest set bit is the rank — no ordered-const lookup.
+        """
+        lamp_mask = sum(PROBLEM_SEVERITY_BITS.values())
+        return (self.data.ntp_fault_state & lamp_mask).bit_length()
 
     @property
     def is_problem_active(self) -> bool:
-        """True when the active fault severity is at or above the chosen threshold."""
-        threshold_rank = PROBLEM_SEVERITY_OPTIONS.index(self.problem_severity_threshold) + 1
+        """True when the active lamp severity is at or above the chosen threshold.
+
+        Only the green/yellow/red lamps count; a pure NTP fault (no lamp bit) is
+        surfaced via the `fault_state` sensor's `ntp_synced` attribute, not here.
+        Threshold rank comes from the same bit definitions as the active rank, so
+        the two never depend on a hand-kept ordering.
+        """
+        threshold_rank = PROBLEM_SEVERITY_BITS[self.problem_severity_threshold].bit_length()
         return self.fault_severity_rank >= threshold_rank
 
     @property
