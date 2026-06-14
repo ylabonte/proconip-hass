@@ -10,21 +10,35 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, mock_r
 from custom_components.proconip_pool_controller.const import DOMAIN
 
 
+def _relay_select_entity_ids(hass: HomeAssistant) -> list[str]:
+    """Relay-select entity ids resolved via unique_id (language-proof).
+
+    Filtering on the ``relay_no_`` entity_id slug only works under English; the
+    relay select's unique_id (``relay_select_<n>_<instance>``) is stable across
+    languages and excludes the problem-severity-threshold select.
+    """
+    registry = er.async_get(hass)
+    return [
+        entry.entity_id
+        for entry in registry.entities.values()
+        if entry.platform == DOMAIN
+        and entry.domain == "select"
+        and "relay_select_" in entry.unique_id
+    ]
+
+
 async def test_select_entities_created(
     hass: HomeAssistant,
     setup_integration: MockConfigEntry,
 ) -> None:
-    selects = [eid for eid in hass.states.async_entity_ids("select") if "relay_no_" in eid]
-    assert len(selects) in (8, 16)
+    assert len(_relay_select_entity_ids(hass)) in (8, 16)
 
 
 async def test_select_options_are_valid(
     hass: HomeAssistant,
     setup_integration: MockConfigEntry,
 ) -> None:
-    for eid in hass.states.async_entity_ids("select"):
-        if "relay_no_" not in eid:
-            continue  # skip the problem-severity-threshold select
+    for eid in _relay_select_entity_ids(hass):
         state = hass.states.get(eid)
         options = state.attributes.get("options", [])
         # Either ["auto","on","off"] for normal relays or ["auto","off"] for
