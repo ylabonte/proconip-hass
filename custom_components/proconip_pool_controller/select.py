@@ -128,6 +128,11 @@ class ProconipProblemSeverityThresholdSelect(
         last_state = await self.async_get_last_state()
         if last_state is not None and last_state.state in PROBLEM_SEVERITY_OPTIONS:
             self.coordinator.problem_severity_threshold = last_state.state
+            # The coordinator's first refresh already fired before any entity
+            # was added, so nudge listeners now — otherwise the Problem
+            # binary_sensor keeps the state it computed from the default
+            # threshold until the next poll (up to the scan interval).
+            self.coordinator.async_update_listeners()
 
     @property
     def current_option(self) -> str:

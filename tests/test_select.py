@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from homeassistant.core import HomeAssistant
+from aioresponses import aioresponses
+from homeassistant.core import HomeAssistant, State
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, mock_restore_cache
 
 from custom_components.proconip_pool_controller.const import DOMAIN
 
@@ -72,3 +73,41 @@ async def test_problem_severity_threshold_select(
     )
     await hass.async_block_till_done()
     assert hass.states.get(problem_eid).state == "on"
+
+
+async def test_restored_threshold_updates_binary_sensor_at_startup(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """A restored non-default threshold is reflected by the Problem sensor immediately.
+
+    Regression: the coordinator's first refresh fires before any entity exists, so
+    restoring the threshold in the select's `async_added_to_hass` must notify
+    listeners — otherwise `binary_sensor.problem` keeps the state it computed from
+    the default threshold until the next poll.
+    """
+    # First setup to learn the registry-assigned entity ids.
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    registry = er.async_get(hass)
+    instance_id = config_entry.entry_id
+    select_eid = registry.async_get_entity_id(
+        "select", DOMAIN, f"problem_severity_threshold_{instance_id}"
+    )
+    problem_eid = registry.async_get_entity_id("binary_sensor", DOMAIN, f"problem_{instance_id}")
+    assert select_eid and problem_eid
+
+    await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Simulate a previous session that had raised the threshold to "red".
+    mock_restore_cache(hass, (State(select_eid, "red"),))
+
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Fixture severity is yellow; the restored "red" threshold is stricter, so the
+    # Problem sensor must read "off" right away — no poll has run since setup.
+    assert hass.states.get(select_eid).state == "red"
+    assert hass.states.get(problem_eid).state == "off"
