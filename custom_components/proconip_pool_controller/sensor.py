@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, NTP_FAULT_BIT, PROBLEM_SEVERITY_BITS
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 from .entity import ProconipPoolControllerEntity
 
@@ -20,6 +23,7 @@ async def async_setup_entry(
     sensor_entities = [
         ProconipRedoxSensor(coordinator=coordinator, instance_id=entry.entry_id),
         ProconipPhSensor(coordinator=coordinator, instance_id=entry.entry_id),
+        ProconipFaultStateSensor(coordinator=coordinator, instance_id=entry.entry_id),
     ]
     for i in range(5):
         sensor_entities.append(
@@ -342,3 +346,39 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
     def native_value(self) -> str:
         """Return the native value of the sensor."""
         return self.coordinator.data.get_relay(relay_id=self._relay_id).display_value
+
+
+class ProconipFaultStateSensor(ProconipPoolControllerEntity, SensorEntity):
+    """Diagnostic sensor for the controller's fault state (SYSINFO[4]).
+
+    Surfaces the proconip library's decoded label for the green/yellow/red GUI
+    warning lamps (and the NTP fault bit), with the raw value and the
+    individual decoded bits exposed as attributes for templates/automations.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "fault_state"
+    _attr_icon = "mdi:alert-circle-outline"
+
+    def __init__(
+        self, coordinator: ProconipPoolControllerDataUpdateCoordinator, instance_id: str
+    ) -> None:
+        super().__init__(coordinator=coordinator)
+        self._attr_unique_id = f"fault_state_{instance_id}"
+
+    @property
+    def native_value(self) -> str:
+        """Return the decoded fault-state label."""
+        return self.coordinator.data.get_ntp_fault_state_as_str()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the raw value and the individual decoded bits."""
+        raw = self.coordinator.data.ntp_fault_state
+        return {
+            "raw": raw,
+            "green": bool(raw & PROBLEM_SEVERITY_BITS["green"]),
+            "yellow": bool(raw & PROBLEM_SEVERITY_BITS["yellow"]),
+            "red": bool(raw & PROBLEM_SEVERITY_BITS["red"]),
+            "ntp_synced": not (raw & NTP_FAULT_BIT),
+        }

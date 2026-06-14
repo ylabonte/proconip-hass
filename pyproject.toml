@@ -38,7 +38,7 @@ test = [
     "pytest-freezer",
     # Keep this in lockstep with custom_components/.../manifest.json so CI
     # exercises the same library floor that HA actually installs at runtime.
-    "proconip>=2.1.1",
+    "proconip>=2.1.2",
 ]
 
 [tool.setuptools]

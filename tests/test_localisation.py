@@ -80,3 +80,55 @@ async def test_entity_friendly_names_follow_language(
         f"{relay_state_1.attributes['friendly_name']!r}, expected "
         f"{expected_relay_state_1!r}"
     )
+
+
+@pytest.mark.parametrize(
+    "language,expected_names",
+    [
+        (
+            "en",
+            {
+                ("sensor", "fault_state"): f"{DEVICE_PREFIX} Fault state",
+                ("binary_sensor", "problem"): f"{DEVICE_PREFIX} Problem",
+                (
+                    "select",
+                    "problem_severity_threshold",
+                ): f"{DEVICE_PREFIX} Problem severity threshold",
+            },
+        ),
+        (
+            "de",
+            {
+                ("sensor", "fault_state"): f"{DEVICE_PREFIX} Fehlerzustand",
+                ("binary_sensor", "problem"): f"{DEVICE_PREFIX} Problem",
+                (
+                    "select",
+                    "problem_severity_threshold",
+                ): f"{DEVICE_PREFIX} Schwelle für Problemmeldung",
+            },
+        ),
+    ],
+)
+async def test_fault_state_entity_friendly_names_follow_language(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+    language: str,
+    expected_names: dict[tuple[str, str], str],
+) -> None:
+    """The new fault-state entities resolve translated friendly names per language."""
+    hass.config.language = language
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    instance_id = config_entry.entry_id
+    for (platform, key), expected in expected_names.items():
+        eid = registry.async_get_entity_id(platform, DOMAIN, f"{key}_{instance_id}")
+        assert eid, f"[{language}] {platform}/{key} not registered"
+        state = hass.states.get(eid)
+        assert state is not None
+        assert state.attributes["friendly_name"] == expected, (
+            f"[{language}] {platform}/{key}: got "
+            f"{state.attributes['friendly_name']!r}, expected {expected!r}"
+        )

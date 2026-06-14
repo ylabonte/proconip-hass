@@ -29,6 +29,9 @@ from .const import (
     DMX_QUIET_WINDOW_SECONDS,
     DOMAIN,
     LOGGER,
+    PROBLEM_SEVERITY_BITS,
+    PROBLEM_SEVERITY_DEFAULT,
+    PROBLEM_SEVERITY_OPTIONS,
 )
 
 
@@ -68,6 +71,12 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         self.config_entry_id = config_entry_id
         self._active_dosage_relays: dict[int, bool] = {}
 
+        # Lowest fault-state severity (SYSINFO[4]) that the Problem
+        # binary_sensor reports as a problem. Owned here so the threshold
+        # select and the binary_sensor share one source of truth; the select
+        # restores the user's choice on startup. Defaults to "yellow".
+        self.problem_severity_threshold: str = PROBLEM_SEVERITY_DEFAULT
+
         # DMX state
         self._dmx_shadow: GetDmxData | None = None
         self._dmx_last_write: datetime | None = None
@@ -82,6 +91,27 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
             update_interval=timedelta(seconds=update_interval_in_seconds),
             update_method=self.proconip_update_method,
         )
+
+    @property
+    def fault_severity_rank(self) -> int:
+        """Highest active GUI-warning-lamp severity in the fault state (SYSINFO[4]).
+
+        Returns 0 when no lamp bit is set, otherwise the 1-based position of
+        the most severe active lamp in `PROBLEM_SEVERITY_OPTIONS`
+        (green=1, yellow=2, red=3).
+        """
+        raw = self.data.ntp_fault_state
+        rank = 0
+        for level, bit in PROBLEM_SEVERITY_BITS.items():
+            if raw & bit:
+                rank = max(rank, PROBLEM_SEVERITY_OPTIONS.index(level) + 1)
+        return rank
+
+    @property
+    def is_problem_active(self) -> bool:
+        """True when the active fault severity is at or above the chosen threshold."""
+        threshold_rank = PROBLEM_SEVERITY_OPTIONS.index(self.problem_severity_threshold) + 1
+        return self.fault_severity_rank >= threshold_rank
 
     @property
     def dmx_lights_configured(self) -> bool:
