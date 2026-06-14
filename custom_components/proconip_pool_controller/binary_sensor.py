@@ -300,6 +300,12 @@ class ProconipProblemBinarySensor(ProconipPoolControllerEntity, BinarySensorEnti
 
     On when the active GUI-warning-lamp severity is at or above the threshold
     chosen via the severity-threshold select (see `coordinator.is_problem_active`).
+
+    Only the green/yellow/red warning lamps count. A pure NTP fault (the clock
+    bit set with no lamp) deliberately does NOT trip this sensor — it is surfaced
+    via the `fault_state` sensor's `ntp_synced` attribute instead, so users who
+    care about NTP can automate on that without the Problem sensor flapping on a
+    clock-sync blip.
     """
 
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
