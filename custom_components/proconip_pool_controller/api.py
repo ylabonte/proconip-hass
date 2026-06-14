@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from proconip import (
     ConfigObject,
+    DigitalInputControl,
     DmxControl,
     DosageControl,
     GetDmxData,
@@ -42,6 +43,9 @@ class ProconipApiClient:
             client_session=self._session, config=self._api_config
         )
         self._dmx_control_api = DmxControl(client_session=self._session, config=self._api_config)
+        self._digital_input_control_api = DigitalInputControl(
+            client_session=self._session, config=self._api_config
+        )
         self._most_recent_data: GetStateData | None = None
 
     async def async_get_data(
@@ -121,6 +125,15 @@ class ProconipApiClient:
         """Start pH plus dosage for given amount of time."""
         return await self._dosage_control_api.async_ph_plus_dosage(
             dosage_duration=duration_in_seconds,
+        )
+
+    async def async_trigger_digital_input(
+        self,
+        digital_input_id: int,
+    ) -> str:
+        """Trigger (momentarily pulse) the digital input with given id."""
+        return await self._digital_input_control_api.async_trigger(
+            digital_input_id=digital_input_id,
         )
 
     async def async_get_dmx(self) -> GetDmxData:
