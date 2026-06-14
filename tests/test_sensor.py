@@ -56,7 +56,7 @@ async def test_fault_state_sensor_decodes_bits(
     hass: HomeAssistant,
     setup_integration: MockConfigEntry,
 ) -> None:
-    """The diagnostic fault-state sensor exposes the decoded bits as attributes."""
+    """The diagnostic fault-state enum sensor reports a stable key + decoded attributes."""
     registry = er.async_get(hass)
     instance_id = setup_integration.entry_id
     eid = registry.async_get_entity_id("sensor", DOMAIN, f"fault_state_{instance_id}")
@@ -64,8 +64,9 @@ async def test_fault_state_sensor_decodes_bits(
 
     state = hass.states.get(eid)
     assert state is not None
-    assert state.state not in ("unknown", "unavailable")
-    # Fixture SYSINFO[4] = 3 → green + yellow set, red clear, NTP in sync.
+    assert state.attributes.get("device_class") == "enum"
+    # Fixture SYSINFO[4] = 3 → green + yellow → highest severity yellow → "warning".
+    assert state.state == "warning"
     assert state.attributes["raw"] == 3
     assert state.attributes["green"] is True
     assert state.attributes["yellow"] is True

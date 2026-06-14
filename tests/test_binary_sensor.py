@@ -95,6 +95,7 @@ async def test_ntp_only_fault_does_not_trip_problem(
     assert problem_eid and fault_eid
 
     fault = hass.states.get(fault_eid)
+    assert fault.state == "ntp_fault"
     assert fault.attributes["raw"] == 65536
     assert fault.attributes["ntp_synced"] is False
     assert fault.attributes["green"] is False

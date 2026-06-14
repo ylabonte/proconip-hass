@@ -106,7 +106,16 @@
         "sensor": {
             "redox": {"name": "Redox sensor"},
             "ph": {"name": "pH sensor"},
-            "fault_state": {"name": "Fault state"},
+            "fault_state": {
+                "name": "Fault state",
+                "state": {
+                    "ok": "OK",
+                    "info": "Info (green)",
+                    "warning": "Warning (yellow)",
+                    "error": "Error (red)",
+                    "ntp_fault": "NTP fault (no time)"
+                }
+            },
             "temperature": {"name": "Temperature No. {sensor_no}: {device_name}"},
             "analog": {"name": "Analog No. {sensor_no}: {device_name}"},
             "digital_input": {"name": "Digital Input No. {sensor_no}: {device_name}"},

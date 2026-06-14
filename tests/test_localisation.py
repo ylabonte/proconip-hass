@@ -15,18 +15,25 @@ in here too.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 from aioresponses import aioresponses
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.proconip_pool_controller.const import DOMAIN
+from custom_components.proconip_pool_controller.const import DOMAIN, FAULT_STATE_OPTIONS
 
 # Device-name prefix that HA composes onto every entity's friendly_name
 # when `_attr_has_entity_name = True` is set on the base entity. Matches
 # `NAME` from the integration's `const.py`.
 DEVICE_PREFIX = "ProCon.IP Pool Controller"
+
+TRANSLATIONS_DIR = (
+    Path(__file__).parents[1] / "custom_components" / "proconip_pool_controller" / "translations"
+)
 
 
 @pytest.mark.parametrize(
@@ -132,3 +139,16 @@ async def test_fault_state_entity_friendly_names_follow_language(
             f"[{language}] {platform}/{key}: got "
             f"{state.attributes['friendly_name']!r}, expected {expected!r}"
         )
+
+
+@pytest.mark.parametrize("language", ["en", "de"])
+def test_fault_state_enum_states_translated(language: str) -> None:
+    """Every fault_state enum option has a non-empty translated label per language.
+
+    The sensor's *state value* is a stable key; the frontend renders it via these
+    `state` labels, so each language must define all of them.
+    """
+    data = json.loads((TRANSLATIONS_DIR / f"{language}.json").read_text(encoding="utf-8"))
+    states = data["entity"]["sensor"]["fault_state"]["state"]
+    missing = [key for key in FAULT_STATE_OPTIONS if not states.get(key)]
+    assert not missing, f"[{language}] fault_state state labels missing/empty: {missing}"

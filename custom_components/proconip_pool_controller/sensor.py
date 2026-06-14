@@ -10,7 +10,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, FAULT_STATE_OPTIONS
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 from .entity import ProconipPoolControllerEntity
 
@@ -349,14 +349,18 @@ class ProconipRelayStateSensor(ProconipPoolControllerEntity, SensorEntity):
 
 
 class ProconipFaultStateSensor(ProconipPoolControllerEntity, SensorEntity):
-    """Diagnostic sensor for the controller's fault state (SYSINFO[4]).
+    """Diagnostic enum sensor for the controller's fault state (SYSINFO[4]).
 
-    Surfaces the proconip library's decoded label for the green/yellow/red GUI
-    warning lamps (and the NTP fault bit), with the raw value and the
-    individual decoded bits exposed as attributes for templates/automations.
+    Reports a stable, language-agnostic key (`ok`/`info`/`warning`/`error` for
+    the green/yellow/red GUI warning lamps, `ntp_fault` for an NTP-only fault),
+    translated per `hass.config.language` via the `state` block in
+    `translations/<lang>.json`. The raw value and decoded flags stay on the
+    attributes for templates/automations.
     """
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = FAULT_STATE_OPTIONS
     _attr_translation_key = "fault_state"
     _attr_icon = "mdi:alert-circle-outline"
 
@@ -368,8 +372,11 @@ class ProconipFaultStateSensor(ProconipPoolControllerEntity, SensorEntity):
 
     @property
     def native_value(self) -> str:
-        """Return the decoded fault-state label."""
-        return self.coordinator.data.get_ntp_fault_state_as_str()
+        """Return the stable fault-state key (highest lamp severity, else NTP/ok)."""
+        rank = self.coordinator.fault_severity_rank
+        if rank:
+            return {1: "info", 2: "warning", 3: "error"}[rank]
+        return "ok" if self.coordinator.fault_flags["ntp_synced"] else "ntp_fault"
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

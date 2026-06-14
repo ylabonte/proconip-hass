@@ -28,3 +28,6 @@ PROBLEM_SEVERITY_BITS: dict[str, int] = {"green": 0x1, "yellow": 0x2, "red": 0x4
 PROBLEM_SEVERITY_OPTIONS: list[str] = ["green", "yellow", "red"]
 PROBLEM_SEVERITY_DEFAULT = "yellow"
 NTP_FAULT_BIT = 0x10000  # SYSINFO[4] bit 16: set = no time from NTP server
+# Stable, language-agnostic states for the fault_state enum sensor. Labels live
+# in translations/<lang>.json under `entity.sensor.fault_state.state`.
+FAULT_STATE_OPTIONS: list[str] = ["ok", "info", "warning", "error", "ntp_fault"]
