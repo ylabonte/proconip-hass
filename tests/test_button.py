@@ -76,6 +76,37 @@ async def test_button_press_triggers_and_refreshes(
     assert _state_gets(mock_state_endpoint) > gets_before
 
 
+async def test_button_hidden_by_default_when_input_unnamed(
+    hass: HomeAssistant,
+    get_state_csv: str,
+    aio_mock: aioresponses,
+    config_entry: MockConfigEntry,
+) -> None:
+    """An ``n.a.``-named digital input still gets a button, hidden by default."""
+    # Rename the first digital input (column 24) to "n.a." in the served CSV.
+    lines = get_state_csv.splitlines()
+    names = lines[1].split(",")
+    names[24] = "n.a."
+    lines[1] = ",".join(names)
+    aio_mock.get(f"{BASE_URL}/GetState.csv", status=200, body="\n".join(lines) + "\n", repeat=True)
+
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    unnamed = registry.async_get_entity_id(
+        "button", DOMAIN, f"digital_input_trigger_1_{config_entry.entry_id}"
+    )
+    named = registry.async_get_entity_id(
+        "button", DOMAIN, f"digital_input_trigger_2_{config_entry.entry_id}"
+    )
+    assert unnamed and named
+    # The unnamed input's button is created but hidden by default; the named
+    # one stays visible.
+    assert registry.async_get(unnamed).hidden_by is not None
+    assert registry.async_get(named).hidden_by is None
+
+
 @pytest.mark.parametrize(
     "language,expected",
     [
