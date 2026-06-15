@@ -9,7 +9,7 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/ylabonte/proconip-hass/issues",
   "requirements": [
-    "proconip>=2.1.2"
+    "proconip>=2.2.0"
   ],
   "version": "2.1.0"
 }

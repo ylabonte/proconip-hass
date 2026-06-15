@@ -18,6 +18,7 @@
 | Platform        | Description                                              |
 |-----------------|----------------------------------------------------------|
 | `binary_sensor` | Show flags/binary data from `GetState.csv` API.          |
+| `button`        | Momentary triggers for the four digital inputs.          |
 | `light`         | DMX-channel lights (dimmer / RGB / RGBW) configured via the integration's options. |
 | `number`        | Dosage relay timer/countdown in seconds.                 |
 | `select`        | `Auto`/`On`/`Off` dropdowns for relays.                  |

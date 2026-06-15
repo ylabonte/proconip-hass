@@ -103,6 +103,11 @@
             "dmx_extension_enabled": {"name": "DMX-Erweiterung aktiviert"},
             "problem": {"name": "Problem"}
         },
+        "button": {
+            "digital_input_trigger": {
+                "name": "Digitalen Eingang Nr. {sensor_no} auslösen: {device_name}"
+            }
+        },
         "sensor": {
             "redox": {"name": "Redox-Sensor"},
             "ph": {"name": "pH-Sensor"},
