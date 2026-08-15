@@ -62,6 +62,9 @@ How the maintainer likes to collaborate with assistants on this repo:
   file. Same for removals or rewrites. Surgical edits, one concern at
   a time, tone consistent with the rest.
 
+- **Log mistakes in `MISTAKES.md`** (what happened, root cause,
+  prevention).
+
 ## Common commands
 
 All scripts cd into the repo root themselves; run them from anywhere.

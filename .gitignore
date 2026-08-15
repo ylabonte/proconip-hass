@@ -293,3 +293,6 @@ $RECYCLE.BIN/
 # Home Assistant configuration
 config/*
 !config/configuration.yaml
+
+# Local mistake log (see "Working style" in CLAUDE.md)
+MISTAKES.md
