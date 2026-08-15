@@ -25,20 +25,22 @@ test = [
     "pytest-asyncio",
     "pytest-cov",
     # Pin pytest-homeassistant-custom-component to a recent range. Without
-    # an upper bound, pip's resolver walks the entire 3-year version history
-    # looking for one compatible with our other deps — eventually hitting an
-    # ancient release that tries to build numpy==1.23.2 from source under a
-    # broken setuptools, which fails on Python 3.13+.
+    # an upper bound, pip's resolver walks the entire version history looking
+    # for one compatible with our other deps — eventually hitting an ancient
+    # release that tries to build numpy==1.23.2 from source under a broken
+    # setuptools, which fails on modern Python.
     #
-    # Lower bound: 0.13.316 is the newest version still installable on
-    # Python 3.13 (later versions require >=3.14). On Python 3.14 pip picks
-    # the latest 0.13.x automatically.
-    "pytest-homeassistant-custom-component>=0.13.316,<0.14",
+    # Lower bound tracks a recent Home Assistant baseline (each 0.13.x patch
+    # is generated against one published HA release — 0.13.356 pins HA
+    # 2026.8.2). Dev/CI runs on Python 3.14, where pip picks the latest
+    # 0.13.x automatically; the <0.14 ceiling keeps us on the current line,
+    # since a future 0.14.x may require an even newer HA/Python than we target.
+    "pytest-homeassistant-custom-component>=0.13.356,<0.14",
     "aioresponses",
     "pytest-freezer",
     # Keep this in lockstep with custom_components/.../manifest.json so CI
     # exercises the same library floor that HA actually installs at runtime.
-    "proconip>=2.1.2",
+    "proconip>=2.2.0",
 ]
 
 [tool.setuptools]
