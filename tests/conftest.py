@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import inspect
 import pathlib
 from collections.abc import AsyncIterator, Generator
 from typing import Any
 
+import aiohttp
 import pytest
 from aioresponses import aioresponses
 from homeassistant.const import (
@@ -19,6 +21,35 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.proconip_pool_controller.const import DOMAIN
+
+# aiohttp 3.14 made ``ClientResponse.__init__`` require a keyword-only
+# ``stream_writer`` argument, which it dereferences during init
+# (``self._output_size = stream_writer.output_size``). aioresponses 0.7.9 (the
+# latest release) builds its mocked responses without passing it, so every
+# mocked request raises ``TypeError: ... missing 1 required keyword-only
+# argument: 'stream_writer'`` once Home Assistant bundles aiohttp >= 3.14 (HA
+# Core 2026.8+). Inject a no-op stream writer when aioresponses omits it. This
+# becomes a no-op the moment aioresponses passes ``stream_writer`` itself, and
+# it never affects real requests (aiohttp always supplies a real writer). The
+# signature guard keeps us inert on aiohttp < 3.14, where ``__init__`` has no
+# such parameter and injecting one would itself raise.
+_orig_client_response_init = aiohttp.ClientResponse.__init__
+
+
+class _NoopStreamWriter:
+    """Minimal stand-in for aiohttp's stream writer in mocked responses."""
+
+    output_size = 0
+
+
+def _client_response_init_with_stream_writer(self: Any, *args: Any, **kwargs: Any) -> None:
+    if kwargs.get("stream_writer") is None:
+        kwargs["stream_writer"] = _NoopStreamWriter()
+    _orig_client_response_init(self, *args, **kwargs)
+
+
+if "stream_writer" in inspect.signature(_orig_client_response_init).parameters:
+    aiohttp.ClientResponse.__init__ = _client_response_init_with_stream_writer  # type: ignore[method-assign]
 
 FIXTURES_DIR = pathlib.Path(__file__).parent / "fixtures"
 
