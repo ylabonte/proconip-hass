@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1](https://github.com/ylabonte/proconip-hass/compare/v2.2.0...v2.2.1) (2026-08-15)
+
+
+### Dependencies
+
+* refresh test dependency floors to current Home Assistant ([#84](https://github.com/ylabonte/proconip-hass/issues/84)) ([1dc0ea1](https://github.com/ylabonte/proconip-hass/commit/1dc0ea177c695ae15c71e06d01e9e00213367456))
+
+
+### Documentation
+
+* remove custom-repository install steps now that we're in HACS default ([#80](https://github.com/ylabonte/proconip-hass/issues/80)) ([6894458](https://github.com/ylabonte/proconip-hass/commit/68944581b5dbfb375715e6e1181ce3f755b08e58))
+
 ## [2.2.0](https://github.com/ylabonte/proconip-hass/compare/v2.1.0...v2.2.0) (2026-06-15)
 
 
