@@ -61,6 +61,11 @@ extend-exclude = [
     "config/",
     "dist/",
     "build/",
+    # Vendored from ylabonte/proconip-pypi — synced, not edited in place, so
+    # we don't enforce our own lint/format on it. (ruff 0.16 also began
+    # formatting embedded code blocks in Markdown, which tripped on the
+    # vendored README.)
+    "tools/proconip_mock/",
 ]
 
 [tool.ruff.lint]
