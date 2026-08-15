@@ -50,21 +50,18 @@
 
 ## Install with HACS (recommended)
 
-> ⚠️ **HACS default-list submission pending.** Once 2.0.0 is released and
-> the [hacs/default PR](https://github.com/hacs/default) merges, you'll
-> be able to install this directly from the HACS default integration
-> list without adding a custom repository. Until then, follow the manual
-> custom-repository steps below.
+This integration is part of the HACS default repository list, so no custom-repository setup is needed.
 
-If you have not already done so, you should first install [HACS (Home Assistant Community Store)](https://hacs.xyz/).
-It is the usual way to install custom integrations and keep them up to date.
+[![Open in HACS][open-in-hacs-badge]][open-in-hacs]
 
-1. Open HACS Settings and add this repository.
-2. Open HACS again and go to "Integrations".
-3. Search for "ProCon.IP Pool Controller".
-4. Install the "ProCon.IP Pool Controller" integration.
-5. Restart Home Assistant
-6. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "ProCon.IP Pool Controller"
+If you don't have HACS yet, [install it first](https://hacs.xyz/) — it's the standard way to install community integrations and keep them updated.
+
+1. In HACS, search for **ProCon.IP Pool Controller**.
+2. Click **Download**.
+3. Restart Home Assistant.
+4. In **Settings → Devices & services**, click **Add Integration** and search for **ProCon.IP Pool Controller**.
+
+Or use the one-click button above to open the integration page in your HACS instance directly.
 
 ## Manual Installation
 If you are running Home Assistant Core only or prefer manual installation for some other reason, keep in mind that you
@@ -143,7 +140,9 @@ This project was generated using the [integration blueprint][integration_bluepri
 [commits-shield]: https://img.shields.io/github/commit-activity/y/ylabonte/proconip-hass.svg?style=for-the-badge
 [commits]: https://github.com/ylabonte/proconip-hass/commits/main
 [hacs]: https://hacs.xyz
-[hacs-badge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[hacs-badge]: https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge
+[open-in-hacs]: https://my.home-assistant.io/redirect/hacs_repository/?owner=ylabonte&repository=proconip-hass&category=integration
+[open-in-hacs-badge]: https://my.home-assistant.io/badges/hacs_repository.svg
 [discord]: https://discord.gg/Qa5fW2R
 [discord-shield]: https://img.shields.io/discord/330944238910963714.svg?style=for-the-badge
 [logo]: https://github.com/ylabonte/proconip-hass/raw/main/logo.png
