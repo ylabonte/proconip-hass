@@ -24,7 +24,7 @@
         { "type": "perf", "section": "Performance" },
         { "type": "revert", "section": "Reverts" },
         { "type": "deps", "section": "Dependencies" },
-        { "type": "docs", "section": "Documentation", "hidden": false },
+        { "type": "docs", "section": "Documentation", "hidden": true },
         { "type": "refactor", "section": "Refactor", "hidden": true },
         { "type": "test", "section": "Tests", "hidden": true },
         { "type": "build", "section": "Build System", "hidden": true },
