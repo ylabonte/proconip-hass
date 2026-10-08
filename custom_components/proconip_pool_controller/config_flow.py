@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import (
     CONF_NAME,
@@ -28,6 +27,15 @@ from proconip import (
 from .api import ProconipConnectionTester
 from .const import CONF_DMX_LIGHTS, DOMAIN, LIGHT_TYPE_CHANNEL_COUNT, LOGGER
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
+
+# HA 2026.9+ aliases `voluptuous` to probatio in sys.modules at startup,
+# and 2026.10+ types `async_show_form(data_schema=...)` as `probatio.Schema`.
+# Older HA (down to our 2025.2 floor) has no probatio, so keep importing
+# voluptuous at runtime and only show mypy the type HA actually gets.
+if TYPE_CHECKING:
+    import probatio as vol
+else:
+    import voluptuous as vol
 
 # Labels for the DMX submenu's dynamic per-light rows. These can't live
 # in translations/<lang>.json because hassfest rejects custom top-level
