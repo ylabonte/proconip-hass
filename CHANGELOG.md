@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2](https://github.com/ylabonte/proconip-hass/compare/v2.2.1...v2.2.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **deps:** require proconip&gt;=2.2.1 for aiohttp 3.14 support ([#87](https://github.com/ylabonte/proconip-hass/issues/87)) ([ff779c6](https://github.com/ylabonte/proconip-hass/commit/ff779c6294c3a61ccf00acf8829dd05b68c514ce))
+
 ## [2.2.1](https://github.com/ylabonte/proconip-hass/compare/v2.2.0...v2.2.1) (2026-08-15)
 
 
