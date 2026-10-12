@@ -200,6 +200,11 @@ async def test_electrolysis_entity_friendly_names_follow_language(
 def test_exception_messages_translated(language: str) -> None:
     """Every translated exception keeps its placeholders in each language."""
     data = json.loads((TRANSLATIONS_DIR / f"{language}.json").read_text(encoding="utf-8"))
-    message = data["exceptions"]["electrolysis_whole_minutes"]["message"]
-    assert message
-    assert "{seconds}" in message
+    exceptions = data["exceptions"]
+    for key, placeholder in (
+        ("electrolysis_whole_minutes", "{seconds}"),
+        ("dosage_relay_permanent_on", "{relay_no}"),
+    ):
+        message = exceptions[key]["message"]
+        assert message, f"[{language}] {key} empty"
+        assert placeholder in message, f"[{language}] {key} lost {placeholder}"

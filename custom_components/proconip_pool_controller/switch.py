@@ -7,6 +7,7 @@ from typing import Any
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -26,7 +27,7 @@ async def async_setup_entry(
             ProconipPoolControllerRelaySwitch(
                 coordinator=coordinator,
                 relay_no=i + 1,
-                available=not coordinator.is_active_dosage_relay(relay_id=i),
+                is_active_dosage_relay=coordinator.is_active_dosage_relay(relay_id=i),
                 instance_id=entry.entry_id,
             )
         )
@@ -48,12 +49,18 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
         self,
         coordinator: ProconipPoolControllerDataUpdateCoordinator,
         relay_no: int,
-        available: bool,
+        is_active_dosage_relay: bool,
         instance_id: str,
     ) -> None:
         """Initialize the switch class."""
         super().__init__(coordinator=coordinator)
-        self._attr_available = available
+        # A relay the controller uses for active dosing may only run under its
+        # dosage control (auto mode or a timed manual dosing), never be switched
+        # on permanently. The switch stays available so its state is visible and
+        # it can still be switched off; only turning it on is refused. The
+        # coordinator reloads the entry when the dosing configuration changes.
+        self._is_active_dosage_relay = is_active_dosage_relay
+        self._relay_no = relay_no
         self._relay_id = relay_no - 1
         self._relay = coordinator.data.get_relay(relay_id=self._relay_id)
         self._attr_entity_registry_visible_default = not self.coordinator.data.is_dosage_relay(
@@ -66,7 +73,13 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
         self._attr_unique_id = f"relay_{relay_no}_{instance_id}"
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        """Turn on the switch."""
+        """Turn on the switch (refused for an active dosage relay)."""
+        if self._is_active_dosage_relay:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="dosage_relay_permanent_on",
+                translation_placeholders={"relay_no": str(self._relay_no)},
+            )
         await self.coordinator.client.async_switch_on(relay_id=self._relay_id)
         await self.coordinator.async_request_refresh()
 

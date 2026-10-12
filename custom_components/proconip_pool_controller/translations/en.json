@@ -153,6 +153,9 @@
         }
     },
     "exceptions": {
+        "dosage_relay_permanent_on": {
+            "message": "Relay {relay_no} is used for dosing and can't be switched on permanently. Use the dosage timer for a manual dosing, or auto mode."
+        },
         "electrolysis_whole_minutes": {
             "message": "Electrolysis run times are set in whole minutes (hh:mm, like the controller's web UI); got {seconds} seconds."
         }

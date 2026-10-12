@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import pytest
 from aioresponses import aioresponses
-from homeassistant.const import SERVICE_TURN_OFF, SERVICE_TURN_ON
+from homeassistant.const import SERVICE_TURN_OFF, SERVICE_TURN_ON, STATE_UNAVAILABLE
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+from custom_components.proconip_pool_controller.const import DOMAIN
 
 
 async def test_switch_entities_created(
@@ -110,3 +114,63 @@ async def test_switch_turn_off_calls_api(
     assert len(posts) >= 1, (
         f"Expected POST to /usrcfg.cgi, got: {dict(mock_state_endpoint.requests)}"
     )
+
+
+async def test_active_dosage_relay_switch_refuses_turn_on_only(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """An active dosage relay's switch stays available, can be switched off, never on.
+
+    Fixture: DOSAGE_CNTRL 257 (chlorine + pH- on), chlorine on relay id 5 and
+    pH- on relay id 4 (0-based), so relays no. 6 and 5 are active dosage
+    relays and relay no. 1 is a plain relay.
+    """
+    mock_state_endpoint.post(
+        "http://192.0.2.10/usrcfg.cgi",
+        status=200,
+        body="OK",
+        repeat=True,
+    )
+    registry = er.async_get(hass)
+
+    def entity_id_of(relay_no: int) -> str:
+        entity_id = registry.async_get_entity_id(
+            "switch", DOMAIN, f"relay_{relay_no}_{setup_integration.entry_id}"
+        )
+        assert entity_id is not None
+        return entity_id
+
+    def usrcfg_posts() -> int:
+        return sum(
+            len(calls)
+            for (method, url), calls in mock_state_endpoint.requests.items()
+            if method == "POST" and "usrcfg.cgi" in str(url)
+        )
+
+    for relay_no in (6, 5, 1):
+        state = hass.states.get(entity_id_of(relay_no))
+        assert state is not None
+        assert state.state != STATE_UNAVAILABLE
+
+    for relay_no in (6, 5):
+        with pytest.raises(ServiceValidationError) as excinfo:
+            await hass.services.async_call(
+                "switch",
+                SERVICE_TURN_ON,
+                {"entity_id": entity_id_of(relay_no)},
+                blocking=True,
+            )
+        assert excinfo.value.translation_key == "dosage_relay_permanent_on"
+        assert excinfo.value.translation_placeholders == {"relay_no": str(relay_no)}
+        assert f"Relay {relay_no} is used for dosing" in str(excinfo.value)
+    assert usrcfg_posts() == 0, "turn_on of a dosage relay must not reach the controller"
+
+    await hass.services.async_call(
+        "switch",
+        SERVICE_TURN_OFF,
+        {"entity_id": entity_id_of(6)},
+        blocking=True,
+    )
+    assert usrcfg_posts() == 1
