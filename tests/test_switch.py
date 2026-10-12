@@ -12,6 +12,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.proconip_pool_controller.const import DOMAIN
 
+from .conftest import BASE_URL
+
 
 async def test_switch_entities_created(
     hass: HomeAssistant,
@@ -174,3 +176,48 @@ async def test_active_dosage_relay_switch_refuses_turn_on_only(
         blocking=True,
     )
     assert usrcfg_posts() == 1
+
+
+async def test_relay_of_disabled_dosage_channel_refuses_turn_on_with_hint(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aio_mock: aioresponses,
+    get_state_csv: str,
+) -> None:
+    """A relay only a *disabled* dosage channel points at gets a translated hint.
+
+    The README's "or some unused relay" variant: pH+ disabled (DOSAGE_CNTRL
+    257 = Cl + pH- only) but pointed at relay id 0 (relay no. 1). The relay is
+    not an active dosage relay, so the switch lets the call through, and the
+    library refuses it (BadRelayException ignores the enable flags). That must
+    surface as a translated ServiceValidationError, with nothing sent.
+    """
+    lines = get_state_csv.split("\n")
+    sysinfo = lines[0].split(",")
+    sysinfo[7] = "0"  # pH+ dosage relay id -> relay no. 1
+    lines[0] = ",".join(sysinfo)
+    aio_mock.get(f"{BASE_URL}/GetState.csv", status=200, body="\n".join(lines), repeat=True)
+    aio_mock.post(f"{BASE_URL}/usrcfg.cgi", status=200, body="OK", repeat=True)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    entity_id = registry.async_get_entity_id("switch", DOMAIN, f"relay_1_{config_entry.entry_id}")
+    assert entity_id is not None
+    before = hass.states.get(entity_id)
+    assert before is not None
+    assert before.state != STATE_UNAVAILABLE
+
+    with pytest.raises(ServiceValidationError) as excinfo:
+        await hass.services.async_call(
+            "switch", SERVICE_TURN_ON, {"entity_id": entity_id}, blocking=True
+        )
+    assert excinfo.value.translation_key == "relay_reserved_for_dosage"
+    assert excinfo.value.translation_placeholders == {"relay_no": "1"}
+    assert "disabled dosage channel" in str(excinfo.value)
+    assert not any(
+        method == "POST" and "usrcfg.cgi" in str(url) for (method, url) in aio_mock.requests
+    )
+    after = hass.states.get(entity_id)
+    assert after is not None
+    assert after.state == before.state
