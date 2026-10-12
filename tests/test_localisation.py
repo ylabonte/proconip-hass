@@ -194,3 +194,12 @@ async def test_electrolysis_entity_friendly_names_follow_language(
         assert state.attributes["friendly_name"] == expected, (
             f"[{language}] {key}: got {state.attributes['friendly_name']!r}, expected {expected!r}"
         )
+
+
+@pytest.mark.parametrize("language", ["en", "de"])
+def test_exception_messages_translated(language: str) -> None:
+    """Every translated exception keeps its placeholders in each language."""
+    data = json.loads((TRANSLATIONS_DIR / f"{language}.json").read_text(encoding="utf-8"))
+    message = data["exceptions"]["electrolysis_whole_minutes"]["message"]
+    assert message
+    assert "{seconds}" in message

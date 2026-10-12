@@ -151,5 +151,10 @@
         "light": {
             "dmx_light": {"name": "DMX {device_name}"}
         }
+    },
+    "exceptions": {
+        "electrolysis_whole_minutes": {
+            "message": "Electrolysis run times are set in whole minutes (hh:mm, like the controller's web UI); got {seconds} seconds."
+        }
     }
 }

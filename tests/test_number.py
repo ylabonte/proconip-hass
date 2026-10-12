@@ -2,12 +2,23 @@
 
 from __future__ import annotations
 
+import re
+from typing import Any
+from unittest.mock import AsyncMock, patch
+
+import pytest
+from aioresponses import aioresponses
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.proconip_pool_controller.const import DOMAIN
 from custom_components.proconip_pool_controller.coordinator import (
     ProconipPoolControllerDataUpdateCoordinator,
+)
+from custom_components.proconip_pool_controller.number import (
+    ProconipPoolControllerDosageRelayTimer,
 )
 
 
@@ -24,3 +35,112 @@ async def test_dosage_timer_created_only_for_active_dosage_relays(
     ]
     expected = sum(1 for is_active in coordinator._active_dosage_relays.values() if is_active)
     assert len(timer_entities) == expected
+
+
+def _timer_state(hass: HomeAssistant, entry: MockConfigEntry, relay_no: int) -> Any:
+    registry = er.async_get(hass)
+    eid = registry.async_get_entity_id(
+        "number", DOMAIN, f"relay_dosage_{relay_no}_{entry.entry_id}"
+    )
+    assert eid, f"dosage timer for relay {relay_no} not registered"
+    state = hass.states.get(eid)
+    assert state is not None
+    return state
+
+
+def _man_dosage_queries(mock: aioresponses) -> list[str]:
+    return [
+        url.query_string
+        for (method, url), _calls in mock.requests.items()
+        if method == "GET" and url.path == "/Command.htm"
+    ]
+
+
+async def test_liquid_dosage_timers_mirror_vendor_mmss_limits(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+) -> None:
+    """Liquid channels take 0..59:59 (mm:ss) like the vendor GUI: 0..3599 s, 1 s steps."""
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
+        setup_integration.entry_id
+    ]
+    assert not coordinator.data.is_electrolysis_enabled()
+    state = _timer_state(hass, setup_integration, coordinator.data.chlorine_dosage_relay_id + 1)
+    assert state.attributes["min"] == 0
+    assert state.attributes["max"] == 3599
+    assert state.attributes["step"] == 1
+
+
+async def test_liquid_dosage_sends_seconds_up_to_3599(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    mock_state_endpoint.get(re.compile(r".*/Command\.htm.*"), status=200, body="", repeat=True)
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
+        setup_integration.entry_id
+    ]
+    state = _timer_state(hass, setup_integration, coordinator.data.chlorine_dosage_relay_id + 1)
+    with patch.object(ProconipPoolControllerDosageRelayTimer, "countdown", new=AsyncMock()):
+        await hass.services.async_call(
+            "number",
+            "set_value",
+            {"entity_id": state.entity_id, "value": 3599},
+            blocking=True,
+        )
+        with pytest.raises(ServiceValidationError):
+            await hass.services.async_call(
+                "number",
+                "set_value",
+                {"entity_id": state.entity_id, "value": 3600},
+                blocking=True,
+            )
+    assert _man_dosage_queries(mock_state_endpoint) == ["MAN_DOSAGE=0,3599"]
+
+
+async def test_electrolysis_dosage_timer_mirrors_vendor_hhmm_limits(
+    hass: HomeAssistant,
+    setup_integration_electrolysis: MockConfigEntry,
+) -> None:
+    """Chlorine with an electrolysis cell takes 00:00..23:59 (hh:mm): 0..86340 s in minutes."""
+    entry = setup_integration_electrolysis
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    assert coordinator.data.is_electrolysis_enabled()
+    chlorine = _timer_state(hass, entry, coordinator.data.chlorine_dosage_relay_id + 1)
+    assert chlorine.attributes["min"] == 0
+    assert chlorine.attributes["max"] == 86340
+    assert chlorine.attributes["step"] == 60
+
+
+async def test_electrolysis_dosage_sends_seconds_in_whole_minutes(
+    hass: HomeAssistant,
+    setup_integration_electrolysis: MockConfigEntry,
+    mock_state_endpoint_electrolysis: aioresponses,
+) -> None:
+    mock = mock_state_endpoint_electrolysis
+    mock.get(re.compile(r".*/Command\.htm.*"), status=200, body="", repeat=True)
+    entry = setup_integration_electrolysis
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    state = _timer_state(hass, entry, coordinator.data.chlorine_dosage_relay_id + 1)
+    with patch.object(ProconipPoolControllerDosageRelayTimer, "countdown", new=AsyncMock()):
+        # 23:59 is the vendor GUI's maximum.
+        await hass.services.async_call(
+            "number",
+            "set_value",
+            {"entity_id": state.entity_id, "value": 86340},
+            blocking=True,
+        )
+        # Not expressible as hh:mm -> rejected before anything is sent.
+        with pytest.raises(ServiceValidationError) as excinfo:
+            await hass.services.async_call(
+                "number",
+                "set_value",
+                {"entity_id": state.entity_id, "value": 90},
+                blocking=True,
+            )
+    assert excinfo.value.translation_domain == DOMAIN
+    assert excinfo.value.translation_key == "electrolysis_whole_minutes"
+    assert excinfo.value.translation_placeholders == {"seconds": "90"}
+    assert "whole minutes" in str(excinfo.value)
+    assert "90 seconds" in str(excinfo.value)
+    assert _man_dosage_queries(mock) == ["MAN_DOSAGE=0,86340"]
