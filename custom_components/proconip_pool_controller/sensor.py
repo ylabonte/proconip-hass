@@ -266,6 +266,9 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
                     self.coordinator.data.is_ph_plus_dosage_enabled()
                 )
         self._attr_translation_placeholders = {"device_name": self._canister.name}
+        # DOSAGE_CNTRL bit 4 is the chlorine device-type selector (TRM: "Cl liquid ||
+        # Elektrolysis"): clear for liquid NaClO (verified: a DTYPE=0 box reports 257),
+        # set for a salt electrolysis cell (inferred; no electrolysis capture yet).
         if canister_no == 1 and self.coordinator.data.is_electrolysis_enabled():
             self._attr_icon = "mdi:timer-sand"
             self._attr_translation_key = "electrolysis_cell_lifetime"
