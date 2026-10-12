@@ -7,11 +7,24 @@ import asyncio
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 from .entity import ProconipPoolControllerEntity
+
+# Manual-dosing limits, mirrored from the vendor web GUI (`topleft.htm`, fw
+# 1.7.6). The GUI takes a "NN:NN" string (regex /^(\d\d):(\d\d)$/, so 00:00
+# is accepted) and always sends seconds: `/Command.htm?MAN_DOSAGE=<target>,<s>`.
+# - liquid channels (Cl liquid, pH-, pH+): mm:ss, max 59:59 -> 0..3599 s,
+#   one-second resolution;
+# - chlorine with a salt electrolysis cell (DOSAGE_CNTRL bit 4): hh:mm, max
+#   23:59 -> 0..86340 s, whole minutes only.
+MANUAL_DOSAGE_MIN_SECONDS = 0
+MANUAL_DOSAGE_MAX_SECONDS_LIQUID = 59 * 60 + 59
+MANUAL_DOSAGE_MAX_SECONDS_ELECTROLYSIS = 23 * 3600 + 59 * 60
+ELECTROLYSIS_DOSAGE_STEP_SECONDS = 60
 
 
 async def async_setup_entry(
@@ -44,8 +57,8 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
     """ProCon.IP Pool Controller relay dosage relay timer class."""
 
     _attr_mode = NumberMode.BOX
-    _attr_native_max_value = 600
-    _attr_native_min_value = 5
+    _attr_native_max_value = MANUAL_DOSAGE_MAX_SECONDS_LIQUID
+    _attr_native_min_value = MANUAL_DOSAGE_MIN_SECONDS
     _attr_native_step = 1
     _attr_native_unit_of_measurement = "seconds"
     _attr_translation_key = "dosage_relay"
@@ -66,6 +79,15 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
             "device_name": self._relay.name,
         }
         self._attr_unique_id = f"relay_dosage_{relay_no}_{instance_id}"
+        # The chlorine supply type is read at setup; the coordinator reloads
+        # the entry when it flips, so these limits follow the controller.
+        self._is_electrolysis = (
+            coordinator.data.chlorine_dosage_relay_id == self._relay_id
+            and coordinator.data.is_electrolysis_enabled()
+        )
+        if self._is_electrolysis:
+            self._attr_native_max_value = MANUAL_DOSAGE_MAX_SECONDS_ELECTROLYSIS
+            self._attr_native_step = ELECTROLYSIS_DOSAGE_STEP_SECONDS
 
     @property
     def icon(self) -> str | None:
@@ -92,6 +114,12 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
     async def async_set_native_value(self, value: float) -> None:
         """Set dosage timer."""
         countdown_value = int(value)
+        if self._is_electrolysis and countdown_value % ELECTROLYSIS_DOSAGE_STEP_SECONDS:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="electrolysis_whole_minutes",
+                translation_placeholders={"seconds": str(countdown_value)},
+            )
         if self.coordinator.data.chlorine_dosage_relay_id == self._relay_id:
             await self.coordinator.client.async_start_chlorine_dosage(
                 duration_in_seconds=countdown_value

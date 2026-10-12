@@ -20,7 +20,7 @@
 | `binary_sensor` | Show flags/binary data from `GetState.csv` API.          |
 | `button`        | Momentary triggers for the four digital inputs.          |
 | `light`         | DMX-channel lights (dimmer / RGB / RGBW) configured via the integration's options. |
-| `number`        | Dosage relay timer/countdown in seconds.                 |
+| `number`        | Dosage relay timer/countdown in seconds: 0–3599 s (mm:ss up to 59:59, like the controller's web UI); chlorine with a salt electrolysis cell 0–86340 s in whole minutes (hh:mm up to 23:59). |
 | `select`        | `Auto`/`On`/`Off` dropdowns for relays.                  |
 | `sensor`        | Show various data from `GetState.csv` API.               |
 | `switch`        | `On`/`Off` and `Auto`/`Manual` switches for relays.      |
