@@ -152,11 +152,17 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
 
         self._reload_if_chlorine_supply_changed(data=data)
 
-        self._active_dosage_relays = {
-            data.chlorine_dosage_relay_id: data.is_chlorine_dosage_enabled(),
-            data.ph_minus_dosage_relay_id: data.is_ph_minus_dosage_enabled(),
-            data.ph_plus_dosage_relay_id: data.is_ph_plus_dosage_enabled(),
-        }
+        # Channels may share a relay (the README even recommends pointing a
+        # disabled channel at an in-use relay), so OR the enable flags per
+        # relay instead of letting the last channel overwrite the first.
+        active: dict[int, bool] = {}
+        for relay_id, enabled in (
+            (data.chlorine_dosage_relay_id, data.is_chlorine_dosage_enabled()),
+            (data.ph_minus_dosage_relay_id, data.is_ph_minus_dosage_enabled()),
+            (data.ph_plus_dosage_relay_id, data.is_ph_plus_dosage_enabled()),
+        ):
+            active[relay_id] = active.get(relay_id, False) or enabled
+        self._active_dosage_relays = active
 
         if data.is_dmx_enabled() and self.dmx_lights_configured:
             await self._maybe_refresh_dmx_shadow()
