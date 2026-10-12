@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import patch
 
+import pytest
 from aioresponses import CallbackResult, aioresponses
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
@@ -175,3 +176,67 @@ async def test_shared_dosage_relay_stays_active_when_a_disabled_channel_points_a
     select_state = hass.states.get(select_eid)
     assert select_state is not None
     assert select_state.attributes["options"] == ["auto", "off"]
+
+
+def _with_sysinfo(csv: str, *, dosage_control: int, cl: int, ph_minus: int, ph_plus: int) -> str:
+    """Return ``csv`` with SYSINFO[6..9] (DOSAGE_CNTRL + dosage relay ids) replaced."""
+    lines = csv.split("\n")
+    sysinfo = lines[0].split(",")
+    sysinfo[6:10] = [str(dosage_control), str(ph_plus), str(ph_minus), str(cl)]
+    lines[0] = ",".join(sysinfo)
+    return "\n".join(lines)
+
+
+@pytest.mark.parametrize(
+    ("change", "expect_reload"),
+    [
+        # Fixture: DOSAGE_CNTRL 257 (Cl + pH-), pH+ -> 4, pH- -> 4, Cl -> 5.
+        ({"dosage_control": 257, "cl": 5, "ph_minus": 4, "ph_plus": 4}, False),
+        ({"dosage_control": 1, "cl": 5, "ph_minus": 4, "ph_plus": 4}, True),  # pH- off
+        ({"dosage_control": 4353, "cl": 5, "ph_minus": 4, "ph_plus": 4}, True),  # pH+ on
+        ({"dosage_control": 257, "cl": 6, "ph_minus": 4, "ph_plus": 4}, True),  # Cl relay
+        ({"dosage_control": 257, "cl": 5, "ph_minus": 3, "ph_plus": 4}, True),  # pH- relay
+        ({"dosage_control": 259, "cl": 5, "ph_minus": 4, "ph_plus": 4}, False),  # reserved bit 1
+    ],
+    ids=[
+        "unchanged",
+        "ph_minus_disabled",
+        "ph_plus_enabled",
+        "cl_relay_moved",
+        "ph_minus_moved",
+        "reserved_bit_ignored",
+    ],
+)
+async def test_dosing_config_change_reloads_entry(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    aio_mock: aioresponses,
+    get_state_csv: str,
+    change: dict[str, int],
+    expect_reload: bool,
+) -> None:
+    """Any change to DOSAGE_CNTRL or a dosage relay id schedules exactly one reload."""
+    served = {"body": get_state_csv}
+
+    def _state(url: Any, **kwargs: Any) -> CallbackResult:
+        return CallbackResult(status=200, body=served["body"])
+
+    aio_mock.get(f"{BASE_URL}/GetState.csv", callback=_state, repeat=True)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
+        config_entry.entry_id
+    ]
+
+    with patch.object(hass.config_entries, "async_schedule_reload") as schedule_reload:
+        served["body"] = _with_sysinfo(get_state_csv, **change)
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+        # A second poll with the same config must not reload again.
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+    if expect_reload:
+        schedule_reload.assert_called_once_with(config_entry.entry_id)
+    else:
+        schedule_reload.assert_not_called()
