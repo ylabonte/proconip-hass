@@ -150,6 +150,8 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         ) as exception:
             raise UpdateFailed(exception) from exception
 
+        self._reload_if_chlorine_supply_changed(data=data)
+
         self._active_dosage_relays = {
             data.chlorine_dosage_relay_id: data.is_chlorine_dosage_enabled(),
             data.ph_minus_dosage_relay_id: data.is_ph_minus_dosage_enabled(),
@@ -167,6 +169,25 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
             self._dmx_shadow = None
 
         return data
+
+    def _reload_if_chlorine_supply_changed(self, data: GetStateData) -> None:
+        """Reload the entry when the chlorine supply flips between liquid and electrolysis.
+
+        The chlorine canister/consumption sensors pick their name and icon at
+        setup (canister vs. electrolysis cell). Mode switches are rare, so a
+        full reload is the cheapest way to keep those labels in step with the
+        live `electrolysis_enabled` binary sensor.
+        """
+        previous: GetStateData | None = self.data
+        if previous is None:
+            return
+        if previous.is_electrolysis_enabled() == data.is_electrolysis_enabled():
+            return
+        LOGGER.info(
+            "Chlorine supply changed to %s; reloading to relabel the chlorine sensors.",
+            "electrolysis" if data.is_electrolysis_enabled() else "liquid",
+        )
+        self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
 
     async def _maybe_refresh_dmx_shadow(self) -> None:
         """Fetch DMX from controller; apply only if outside the quiet window.

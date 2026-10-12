@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Home Assistant **custom integration** (HACS-distributed) for the [ProCon.IP pool controller](https://www.pooldigital.de). The integration code lives in `custom_components/proconip_pool_controller/` and follows the [@ludeeus/integration_blueprint](https://github.com/ludeeus/integration_blueprint) pattern.
 
-All HTTP/CSV parsing, relay/dosage commands, and DMX read/writes are delegated to the **`proconip` PyPI package** (declared in `manifest.json` requirements as `proconip>=2.1.1`). When a question is about *what data exists* or *how a call works*, the answer is in that library, not here:
+All HTTP/CSV parsing, relay/dosage commands, and DMX read/writes are delegated to the **`proconip` PyPI package** (declared in `manifest.json` requirements as `proconip>=2.3.0`). When a question is about *what data exists* or *how a call works*, the answer is in that library, not here:
 
 - Source: https://github.com/ylabonte/proconip-pypi
 - Docs: https://ylabonte.github.io/proconip-pypi/
@@ -149,7 +149,7 @@ Releases are fully automated by [release-please](https://github.com/googleapis/r
 
 **Do:** bump `hacs.json:homeassistant` minimum if you start using newer HA APIs.
 
-- **Runtime minimum (what shipped users need): HA 2025.2.0, Python 3.13+.** That's the floor declared in `hacs.json` and `manifest.json` (`proconip>=2.1.1`). HA 2025.2.0 is the first release that required Python 3.13 (which `proconip` itself requires); its bundled `aiohttp` 3.11.x easily satisfies `proconip>=2.1.1`'s relaxed `aiohttp>=3.10` floor.
+- **Runtime minimum (what shipped users need): HA 2025.2.0, Python 3.13+.** That's the floor declared in `hacs.json` and `manifest.json` (`proconip>=2.3.0`). HA 2025.2.0 is the first release that required Python 3.13 (which `proconip` itself requires); its bundled `aiohttp` 3.11.x easily satisfies `proconip>=2.3.0`'s relaxed `aiohttp>=3.10` floor.
 - **Dev / CI minimum: Python 3.14.2.** Higher than the runtime floor because `pytest-homeassistant-custom-component` pulls in current HA Core (2026.5+) which itself requires 3.14.2+. `scripts/setup` enforces this and refuses 3.14.0/3.14.1 up front rather than letting pip-resolve fail with a confusing error. See `.github/workflows/test.yml`, `.github/workflows/lint.yml`, `scripts/setup`, and the devcontainer image `python:dev-3.14`. `pyproject.toml` mypy sits on 3.14 for the same reason (mypy follows imports into HA's source, which uses PEP 758 syntax). `ruff target-version = "py313"` is what actually enforces our own source stays valid on 3.13.
 
 ### Conventional Commits — type → release-please behaviour
