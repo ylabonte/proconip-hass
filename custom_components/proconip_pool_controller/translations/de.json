@@ -153,6 +153,9 @@
         }
     },
     "exceptions": {
+        "relay_reserved_for_dosage": {
+            "message": "Relais {relay_no} ist einem deaktivierten Dosierkanal zugeordnet, daher schaltet die Steuerung es nicht dauerhaft ein. Wähle in den Dosiereinstellungen der Steuerung ein anderes Relais für diesen Kanal."
+        },
         "dosage_relay_permanent_on": {
             "message": "Relais {relay_no} wird für die Dosierung verwendet und kann nicht dauerhaft eingeschaltet werden. Nutze den Dosier-Timer für eine manuelle Dosierung oder den Automatikmodus."
         },

@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from proconip import BadRelayException
 
 from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
@@ -80,7 +81,16 @@ class ProconipPoolControllerRelaySwitch(ProconipPoolControllerEntity, SwitchEnti
                 translation_key="dosage_relay_permanent_on",
                 translation_placeholders={"relay_no": str(self._relay_no)},
             )
-        await self.coordinator.client.async_switch_on(relay_id=self._relay_id)
+        try:
+            await self.coordinator.client.async_switch_on(relay_id=self._relay_id)
+        except BadRelayException as exception:
+            # The library also refuses relays that only a *disabled* dosage
+            # channel points at (its check ignores the enable flags).
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="relay_reserved_for_dosage",
+                translation_placeholders={"relay_no": str(self._relay_no)},
+            ) from exception
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:

@@ -153,6 +153,9 @@
         }
     },
     "exceptions": {
+        "relay_reserved_for_dosage": {
+            "message": "Relay {relay_no} is assigned to a disabled dosage channel, so the controller won't switch it on permanently. In the controller's dosing settings, select a different relay for that channel."
+        },
         "dosage_relay_permanent_on": {
             "message": "Relay {relay_no} is used for dosing and can't be switched on permanently. Use the dosage timer for a manual dosing, or auto mode."
         },

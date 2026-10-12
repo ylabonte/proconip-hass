@@ -204,6 +204,7 @@ def test_exception_messages_translated(language: str) -> None:
     for key, placeholder in (
         ("electrolysis_whole_minutes", "{seconds}"),
         ("dosage_relay_permanent_on", "{relay_no}"),
+        ("relay_reserved_for_dosage", "{relay_no}"),
     ):
         message = exceptions[key]["message"]
         assert message, f"[{language}] {key} empty"
