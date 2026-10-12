@@ -177,3 +177,68 @@ async def test_shared_relay_routes_to_first_enabled_channel(
             blocking=True,
         )
     assert _man_dosage_queries(mock) == ["MAN_DOSAGE=1,90"]
+
+
+def _timer_entity(hass: HomeAssistant, entity_id: str) -> ProconipPoolControllerDosageRelayTimer:
+    entity = hass.data["number"].get_entity(entity_id)
+    assert isinstance(entity, ProconipPoolControllerDosageRelayTimer)
+    return entity
+
+
+async def test_new_value_replaces_running_countdown(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """A second value cancels the first countdown instead of running two loops."""
+    mock_state_endpoint.get(re.compile(r".*/Command\.htm.*"), status=200, body="", repeat=True)
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
+        setup_integration.entry_id
+    ]
+    state = _timer_state(hass, setup_integration, coordinator.data.chlorine_dosage_relay_id + 1)
+    entity = _timer_entity(hass, state.entity_id)
+
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": state.entity_id, "value": 120}, blocking=True
+    )
+    first = entity._countdown_task
+    assert first is not None
+    assert not first.done()
+
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": state.entity_id, "value": 60}, blocking=True
+    )
+    await hass.async_block_till_done(wait_background_tasks=False)
+    second = entity._countdown_task
+    assert second is not None
+    assert second is not first
+    assert first.cancelled()
+    assert not second.done()
+    assert entity.native_value is not None
+    assert 0 < entity.native_value <= 60
+
+
+async def test_countdown_cancelled_when_entry_unloads(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+    mock_state_endpoint: aioresponses,
+) -> None:
+    """Unloading (e.g. the mode-flip reload) must not leave a countdown running."""
+    mock_state_endpoint.get(re.compile(r".*/Command\.htm.*"), status=200, body="", repeat=True)
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][
+        setup_integration.entry_id
+    ]
+    state = _timer_state(hass, setup_integration, coordinator.data.chlorine_dosage_relay_id + 1)
+    entity = _timer_entity(hass, state.entity_id)
+
+    await hass.services.async_call(
+        "number", "set_value", {"entity_id": state.entity_id, "value": 3599}, blocking=True
+    )
+    task = entity._countdown_task
+    assert task is not None
+    assert not task.done()
+
+    assert await hass.config_entries.async_unload(setup_integration.entry_id)
+    await hass.async_block_till_done()
+    assert task.cancelled()
+    assert entity._countdown_task is None

@@ -82,6 +82,7 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
     _attr_native_unit_of_measurement = "seconds"
     _attr_translation_key = "dosage_relay"
     _countdown_value: int = 0
+    _countdown_task: asyncio.Task[None] | None = None
 
     def __init__(
         self,
@@ -158,9 +159,33 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
                 self._relay_id + 1,
             )
             return None
-        loop = asyncio.get_event_loop()
-        loop.create_task(coro=self.countdown(value=countdown_value))
+        self._start_countdown(seconds=countdown_value)
         return await self.coordinator.async_request_refresh()
+
+    def _start_countdown(self, seconds: int) -> None:
+        """(Re)start the local UI countdown, replacing any running one.
+
+        Runs as a config-entry background task, so it is cancelled with the
+        entry (e.g. on the mode-flip reload) instead of outliving it; a new
+        value cancels the previous countdown so only one loop ticks.
+        """
+        self._cancel_countdown()
+        self._countdown_task = self.coordinator.config_entry.async_create_background_task(
+            hass=self.hass,
+            target=self.countdown(value=seconds),
+            name=f"proconip dosage countdown relay {self._relay_id + 1}",
+        )
+
+    def _cancel_countdown(self) -> None:
+        """Cancel the running countdown task, if any."""
+        if self._countdown_task is not None and not self._countdown_task.done():
+            self._countdown_task.cancel()
+        self._countdown_task = None
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop the countdown when the entity goes away."""
+        self._cancel_countdown()
+        await super().async_will_remove_from_hass()
 
 
 # class ProconipPoolControllerRelayNumberEntity(
