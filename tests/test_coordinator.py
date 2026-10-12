@@ -144,3 +144,34 @@ async def test_chlorine_supply_change_reloads_and_relabels(
     state = hass.states.get(eid)
     assert state is not None
     assert state.attributes["friendly_name"].endswith("Electrolysis cell remaining lifetime")
+
+
+async def test_shared_dosage_relay_stays_active_when_a_disabled_channel_points_at_it(
+    hass: HomeAssistant,
+    setup_integration: MockConfigEntry,
+) -> None:
+    """The README-recommended setup: pH+ disabled, pointed at the pH- relay.
+
+    Fixture SYSINFO ``…,257,4,4,5``: pH+ -> relay 4, pH- -> relay 4, Cl -> relay
+    5; DOSAGE_CNTRL 257 = Cl + pH- enabled, pH+ disabled. Relay 4 must count as
+    an active dosage relay (pH- is on), not be overwritten by the disabled pH+.
+    """
+    entry = setup_integration
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    data = coordinator.data
+    assert data.ph_minus_dosage_relay_id == data.ph_plus_dosage_relay_id == 4
+    assert data.is_ph_minus_dosage_enabled()
+    assert not data.is_ph_plus_dosage_enabled()
+    assert coordinator.is_active_dosage_relay(relay_id=4) is True
+    assert coordinator.is_active_dosage_relay(relay_id=5) is True
+
+    registry = er.async_get(hass)
+    instance_id = entry.entry_id
+    # pH- relay (relay_no 5) now gets a dosage timer …
+    assert registry.async_get_entity_id("number", DOMAIN, f"relay_dosage_5_{instance_id}")
+    # … and no "on" option in its mode select.
+    select_eid = registry.async_get_entity_id("select", DOMAIN, f"relay_select_5_{instance_id}")
+    assert select_eid
+    select_state = hass.states.get(select_eid)
+    assert select_state is not None
+    assert select_state.attributes["options"] == ["auto", "off"]
