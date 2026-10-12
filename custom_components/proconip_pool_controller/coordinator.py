@@ -150,7 +150,7 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
         ) as exception:
             raise UpdateFailed(exception) from exception
 
-        self._reload_if_chlorine_supply_changed(data=data)
+        self._reload_if_dosing_config_changed(data=data)
 
         # Channels may share a relay (the README even recommends pointing a
         # disabled channel at an in-use relay), so OR the enable flags per
@@ -176,22 +176,42 @@ class ProconipPoolControllerDataUpdateCoordinator(DataUpdateCoordinator[GetState
 
         return data
 
-    def _reload_if_chlorine_supply_changed(self, data: GetStateData) -> None:
-        """Reload the entry when the chlorine supply flips between liquid and electrolysis.
+    # DOSAGE_CNTRL bits the integration reads: 0 chlorine, 4 electrolysis,
+    # 8 pH-, 12 pH+. The TRM (p.106) marks the bits in between as reserved;
+    # masking them keeps a firmware that ever uses one for live status from
+    # reloading the entry on every toggle.
+    _DOSAGE_CONTROL_MASK = 0x1111
 
-        The chlorine canister/consumption sensors pick their name and icon at
-        setup (canister vs. electrolysis cell). Mode switches are rare, so a
-        full reload is the cheapest way to keep those labels in step with the
-        live `electrolysis_enabled` binary sensor.
+    @staticmethod
+    def _dosing_config(data: GetStateData) -> tuple[int, int, int, int]:
+        """The controller's dosing routing: DOSAGE_CNTRL plus the three dosage relay ids."""
+        return (
+            data.dosage_control & ProconipPoolControllerDataUpdateCoordinator._DOSAGE_CONTROL_MASK,
+            data.chlorine_dosage_relay_id,
+            data.ph_minus_dosage_relay_id,
+            data.ph_plus_dosage_relay_id,
+        )
+
+    def _reload_if_dosing_config_changed(self, data: GetStateData) -> None:
+        """Reload the entry when the controller's dosing configuration changes.
+
+        Several entities make setup-time decisions from DOSAGE_CNTRL (channel
+        enable bits, bit 4 electrolysis) and the dosage relay ids (SYSINFO
+        7-9): the chlorine sensors' canister vs. cell labels, which relays get
+        a dosage timer and which channel/limits it uses, and the dosage relays'
+        switch/select options. Such edits are rare, so a full reload is the
+        cheapest way to keep all of them in step with the controller.
         """
         previous: GetStateData | None = self.data
         if previous is None:
             return
-        if previous.is_electrolysis_enabled() == data.is_electrolysis_enabled():
+        old, new = self._dosing_config(previous), self._dosing_config(data)
+        if old == new:
             return
         LOGGER.info(
-            "Chlorine supply changed to %s; reloading to relabel the chlorine sensors.",
-            "electrolysis" if data.is_electrolysis_enabled() else "liquid",
+            "Dosing configuration changed (DOSAGE_CNTRL, Cl/pH-/pH+ relay: %s -> %s); reloading.",
+            old,
+            new,
         )
         self.hass.config_entries.async_schedule_reload(self.config_entry.entry_id)
 

@@ -11,7 +11,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from proconip import DosageTarget, GetStateData
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 from .entity import ProconipPoolControllerEntity
 
@@ -99,9 +99,10 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
             "device_name": self._relay.name,
         }
         self._attr_unique_id = f"relay_dosage_{relay_no}_{instance_id}"
-        # Channel routing and the chlorine supply type are read at setup; the
-        # coordinator reloads the entry when the supply type flips, so the
-        # limits follow the controller.
+        # Channel routing and the chlorine supply type are read at setup. A
+        # timer only exists for an active dosage relay, so a channel always
+        # resolves; the coordinator reloads the entry whenever the dosing
+        # configuration changes, so routing and limits follow the controller.
         self._channel = resolve_dosage_channel(data=coordinator.data, relay_id=self._relay_id)
         self._is_electrolysis = (
             self._channel is DosageTarget.CHLORINE and coordinator.data.is_electrolysis_enabled()
@@ -153,12 +154,6 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
             await self.coordinator.client.async_start_ph_plus_dosage(
                 duration_in_seconds=countdown_value
             )
-        else:
-            LOGGER.warning(
-                "Relay %s is no longer routed to an enabled dosage channel; not dosing.",
-                self._relay_id + 1,
-            )
-            return None
         self._start_countdown(seconds=countdown_value)
         return await self.coordinator.async_request_refresh()
 
