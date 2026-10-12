@@ -9,8 +9,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from proconip import DosageTarget, GetStateData
 
-from .const import DOMAIN
+from .const import DOMAIN, LOGGER
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
 from .entity import ProconipPoolControllerEntity
 
@@ -25,6 +26,24 @@ MANUAL_DOSAGE_MIN_SECONDS = 0
 MANUAL_DOSAGE_MAX_SECONDS_LIQUID = 59 * 60 + 59
 MANUAL_DOSAGE_MAX_SECONDS_ELECTROLYSIS = 23 * 3600 + 59 * 60
 ELECTROLYSIS_DOSAGE_STEP_SECONDS = 60
+
+
+def resolve_dosage_channel(data: GetStateData, relay_id: int) -> DosageTarget | None:
+    """Return the dosage channel the controller routes a relay to.
+
+    Mirrors the vendor web GUI (`topleft.htm` `RButton`, L660-682): a dosage
+    relay belongs to the first *enabled* channel whose relay matches, checked
+    in the order chlorine, pH-, pH+. Channels may share a relay, so matching
+    on the relay id alone would pick a disabled channel.
+    """
+    for target, channel_relay_id, enabled in (
+        (DosageTarget.CHLORINE, data.chlorine_dosage_relay_id, data.is_chlorine_dosage_enabled()),
+        (DosageTarget.PH_MINUS, data.ph_minus_dosage_relay_id, data.is_ph_minus_dosage_enabled()),
+        (DosageTarget.PH_PLUS, data.ph_plus_dosage_relay_id, data.is_ph_plus_dosage_enabled()),
+    ):
+        if enabled and channel_relay_id == relay_id:
+            return target
+    return None
 
 
 async def async_setup_entry(
@@ -79,11 +98,12 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
             "device_name": self._relay.name,
         }
         self._attr_unique_id = f"relay_dosage_{relay_no}_{instance_id}"
-        # The chlorine supply type is read at setup; the coordinator reloads
-        # the entry when it flips, so these limits follow the controller.
+        # Channel routing and the chlorine supply type are read at setup; the
+        # coordinator reloads the entry when the supply type flips, so the
+        # limits follow the controller.
+        self._channel = resolve_dosage_channel(data=coordinator.data, relay_id=self._relay_id)
         self._is_electrolysis = (
-            coordinator.data.chlorine_dosage_relay_id == self._relay_id
-            and coordinator.data.is_electrolysis_enabled()
+            self._channel is DosageTarget.CHLORINE and coordinator.data.is_electrolysis_enabled()
         )
         if self._is_electrolysis:
             self._attr_native_max_value = MANUAL_DOSAGE_MAX_SECONDS_ELECTROLYSIS
@@ -120,18 +140,24 @@ class ProconipPoolControllerDosageRelayTimer(ProconipPoolControllerEntity, Numbe
                 translation_key="electrolysis_whole_minutes",
                 translation_placeholders={"seconds": str(countdown_value)},
             )
-        if self.coordinator.data.chlorine_dosage_relay_id == self._relay_id:
+        if self._channel is DosageTarget.CHLORINE:
             await self.coordinator.client.async_start_chlorine_dosage(
                 duration_in_seconds=countdown_value
             )
-        elif self.coordinator.data.ph_minus_dosage_relay_id == self._relay_id:
+        elif self._channel is DosageTarget.PH_MINUS:
             await self.coordinator.client.async_start_ph_minus_dosage(
                 duration_in_seconds=countdown_value
             )
-        elif self.coordinator.data.ph_plus_dosage_relay_id == self._relay_id:
+        elif self._channel is DosageTarget.PH_PLUS:
             await self.coordinator.client.async_start_ph_plus_dosage(
                 duration_in_seconds=countdown_value
             )
+        else:
+            LOGGER.warning(
+                "Relay %s is no longer routed to an enabled dosage channel; not dosing.",
+                self._relay_id + 1,
+            )
+            return None
         loop = asyncio.get_event_loop()
         loop.create_task(coro=self.countdown(value=countdown_value))
         return await self.coordinator.async_request_refresh()

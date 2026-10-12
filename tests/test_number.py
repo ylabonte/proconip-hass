@@ -144,3 +144,36 @@ async def test_electrolysis_dosage_sends_seconds_in_whole_minutes(
     assert "whole minutes" in str(excinfo.value)
     assert "90 seconds" in str(excinfo.value)
     assert _man_dosage_queries(mock) == ["MAN_DOSAGE=0,86340"]
+
+
+async def test_shared_relay_routes_to_first_enabled_channel(
+    hass: HomeAssistant,
+    setup_integration_shared_relay_electrolysis: MockConfigEntry,
+    mock_state_endpoint_shared_relay_electrolysis: aioresponses,
+) -> None:
+    """Disabled electrolysis chlorine on the pH- relay must not hijack the pH- timer.
+
+    The vendor GUI routes a relay to the first *enabled* channel (Cl, pH-,
+    pH+). Chlorine is disabled here, so relay 4 is pH-: mm:ss limits and
+    ``MAN_DOSAGE=1,…`` — not the hh:mm limits or target 0 of electrolysis.
+    """
+    mock = mock_state_endpoint_shared_relay_electrolysis
+    mock.get(re.compile(r".*/Command\.htm.*"), status=200, body="", repeat=True)
+    entry = setup_integration_shared_relay_electrolysis
+    coordinator: ProconipPoolControllerDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    data = coordinator.data
+    assert data.is_electrolysis_enabled()
+    assert not data.is_chlorine_dosage_enabled()
+    assert data.chlorine_dosage_relay_id == data.ph_minus_dosage_relay_id == 4
+
+    state = _timer_state(hass, entry, 5)
+    assert state.attributes["max"] == 3599
+    assert state.attributes["step"] == 1
+    with patch.object(ProconipPoolControllerDosageRelayTimer, "countdown", new=AsyncMock()):
+        await hass.services.async_call(
+            "number",
+            "set_value",
+            {"entity_id": state.entity_id, "value": 90},
+            blocking=True,
+        )
+    assert _man_dosage_queries(mock) == ["MAN_DOSAGE=1,90"]

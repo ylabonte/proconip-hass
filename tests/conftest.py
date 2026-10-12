@@ -165,6 +165,30 @@ def mock_state_endpoint_electrolysis(
 
 
 @pytest.fixture
+def get_state_shared_relay_electrolysis_csv() -> str:
+    """Electrolysis variant where a *disabled* chlorine channel shares the pH- relay.
+
+    SYSINFO ``…,272,4,4,4``: DOSAGE_CNTRL 272 = bit 4 (electrolysis) + pH-
+    enabled, chlorine dosing disabled; pH+, pH- and Cl all on relay 4.
+    """
+    return (FIXTURES_DIR / "get_state_shared_relay_electrolysis.csv").read_text()
+
+
+@pytest.fixture
+def mock_state_endpoint_shared_relay_electrolysis(
+    aio_mock: aioresponses, get_state_shared_relay_electrolysis_csv: str
+) -> aioresponses:
+    """``mock_state_endpoint`` variant serving the shared-relay electrolysis row."""
+    aio_mock.get(
+        f"{BASE_URL}/GetState.csv",
+        status=200,
+        body=get_state_shared_relay_electrolysis_csv,
+        repeat=True,
+    )
+    return aio_mock
+
+
+@pytest.fixture
 def mock_dmx_endpoint(aio_mock: aioresponses, get_dmx_csv: str) -> aioresponses:
     aio_mock.get(
         f"{BASE_URL}/GetDmx.csv",
@@ -233,6 +257,20 @@ async def setup_integration_electrolysis(
     mock_state_endpoint_electrolysis: aioresponses,
 ) -> AsyncIterator[MockConfigEntry]:
     """``setup_integration`` variant whose controller uses salt electrolysis."""
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    yield config_entry
+    await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+
+@pytest.fixture
+async def setup_integration_shared_relay_electrolysis(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint_shared_relay_electrolysis: aioresponses,
+) -> AsyncIterator[MockConfigEntry]:
+    """``setup_integration`` variant: disabled electrolysis Cl shares the pH- relay."""
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
     yield config_entry
