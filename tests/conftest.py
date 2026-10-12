@@ -140,6 +140,31 @@ def mock_state_endpoint_ntp_fault(
 
 
 @pytest.fixture
+def get_state_electrolysis_csv() -> str:
+    """Variant of ``get_state.csv`` with a salt-electrolysis chlorine supply.
+
+    Copied from the ``proconip`` library's fixture of the same name:
+    SYSINFO[6]=273 (Cl enabled + bit 4 electrolysis + pH- enabled), Cl Rest
+    raw 873 (87.3 % cell lifetime left), Cl consumption 412 g.
+    """
+    return (FIXTURES_DIR / "get_state_electrolysis.csv").read_text()
+
+
+@pytest.fixture
+def mock_state_endpoint_electrolysis(
+    aio_mock: aioresponses, get_state_electrolysis_csv: str
+) -> aioresponses:
+    """``mock_state_endpoint`` variant serving an electrolysis SYSINFO row."""
+    aio_mock.get(
+        f"{BASE_URL}/GetState.csv",
+        status=200,
+        body=get_state_electrolysis_csv,
+        repeat=True,
+    )
+    return aio_mock
+
+
+@pytest.fixture
 def mock_dmx_endpoint(aio_mock: aioresponses, get_dmx_csv: str) -> aioresponses:
     aio_mock.get(
         f"{BASE_URL}/GetDmx.csv",
@@ -194,6 +219,20 @@ async def setup_integration_dmx_on(
     ``dmx_lights_menu`` without seeding an existing light (the orphan
     branch).
     """
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    yield config_entry
+    await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+
+@pytest.fixture
+async def setup_integration_electrolysis(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint_electrolysis: aioresponses,
+) -> AsyncIterator[MockConfigEntry]:
+    """``setup_integration`` variant whose controller uses salt electrolysis."""
     assert await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
     yield config_entry

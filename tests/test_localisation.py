@@ -152,3 +152,45 @@ def test_fault_state_enum_states_translated(language: str) -> None:
     states = data["entity"]["sensor"]["fault_state"]["state"]
     missing = [key for key in FAULT_STATE_OPTIONS if not states.get(key)]
     assert not missing, f"[{language}] fault_state state labels missing/empty: {missing}"
+
+
+@pytest.mark.parametrize(
+    "language,expected_names",
+    [
+        (
+            "en",
+            {
+                "canister_1": f"{DEVICE_PREFIX} Electrolysis cell remaining lifetime",
+                "canister_consumption_1": f"{DEVICE_PREFIX} Chlorine production today",
+            },
+        ),
+        (
+            "de",
+            {
+                "canister_1": f"{DEVICE_PREFIX} Elektrolysezelle Restlaufzeit",
+                "canister_consumption_1": f"{DEVICE_PREFIX} Chlorproduktion heute",
+            },
+        ),
+    ],
+)
+async def test_electrolysis_entity_friendly_names_follow_language(
+    hass: HomeAssistant,
+    config_entry: MockConfigEntry,
+    mock_state_endpoint_electrolysis: aioresponses,
+    language: str,
+    expected_names: dict[str, str],
+) -> None:
+    """With electrolysis, the chlorine canister entities use the cell labels."""
+    hass.config.language = language
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    registry = er.async_get(hass)
+    for key, expected in expected_names.items():
+        eid = registry.async_get_entity_id("sensor", DOMAIN, f"{key}_{config_entry.entry_id}")
+        assert eid, f"[{language}] {key} not registered"
+        state = hass.states.get(eid)
+        assert state is not None
+        assert state.attributes["friendly_name"] == expected, (
+            f"[{language}] {key}: got {state.attributes['friendly_name']!r}, expected {expected!r}"
+        )

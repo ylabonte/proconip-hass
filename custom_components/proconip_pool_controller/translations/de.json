@@ -126,6 +126,8 @@
             "digital_input": {"name": "Digitaler Eingang Nr. {sensor_no}: {device_name}"},
             "canister": {"name": "Kanister {device_name}"},
             "canister_consumption": {"name": "Kanister-Verbrauch {device_name}"},
+            "electrolysis_cell_lifetime": {"name": "Elektrolysezelle Restlaufzeit"},
+            "electrolysis_production": {"name": "Chlorproduktion heute"},
             "relay_state": {"name": "Relais Nr. {relay_no} ({device_name}) Zustand"}
         },
         "switch": {

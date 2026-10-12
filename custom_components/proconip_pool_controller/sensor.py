@@ -228,7 +228,14 @@ class ProconipDigitalInputSensor(ProconipPoolControllerEntity, SensorEntity):
 
 
 class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
-    """ProCon.IP Canister Sensor class."""
+    """ProCon.IP Canister Sensor class.
+
+    Reports a canister's remaining content in percent. With a salt
+    electrolysis cell as chlorine supply, the controller reuses the chlorine
+    canister column for the cell's remaining lifetime (percent of the
+    configured operating hours), so canister 1 is then labelled as the cell.
+    The unique_id stays ``canister_1_*`` to keep entity history intact.
+    """
 
     _attr_icon = "mdi:bottle-tonic-outline"
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -259,6 +266,10 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
                     self.coordinator.data.is_ph_plus_dosage_enabled()
                 )
         self._attr_translation_placeholders = {"device_name": self._canister.name}
+        if canister_no == 1 and self.coordinator.data.is_electrolysis_enabled():
+            self._attr_icon = "mdi:timer-sand"
+            self._attr_translation_key = "electrolysis_cell_lifetime"
+            self._attr_translation_placeholders = {}
         self._attr_unique_id = f"canister_{canister_no}_{instance_id}"
 
     @property
@@ -273,7 +284,13 @@ class ProconipCanisterSensor(ProconipPoolControllerEntity, SensorEntity):
 
 
 class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEntity):
-    """ProCon.IP Canister Consumption Sensor class."""
+    """ProCon.IP Canister Consumption Sensor class.
+
+    Reports the amount dosed today. With a salt electrolysis cell as chlorine
+    supply, the chlorine column holds today's calculated chlorine production
+    instead, so consumption 1 is then labelled as production. The unique_id
+    stays ``canister_consumption_1_*`` to keep entity history intact.
+    """
 
     _attr_icon = "mdi:bottle-tonic-plus-outline"
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -304,6 +321,10 @@ class ProconipCanisterConsumptionSensor(ProconipPoolControllerEntity, SensorEnti
                     self.coordinator.data.is_ph_plus_dosage_enabled()
                 )
         self._attr_translation_placeholders = {"device_name": self._canister.name}
+        if canister_no == 1 and self.coordinator.data.is_electrolysis_enabled():
+            self._attr_icon = "mdi:flask-outline"
+            self._attr_translation_key = "electrolysis_production"
+            self._attr_translation_placeholders = {}
         self._attr_unique_id = f"canister_consumption_{canister_no}_{instance_id}"
 
     @property
