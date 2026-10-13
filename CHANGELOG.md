@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.3](https://github.com/ylabonte/proconip-hass/compare/v2.2.2...v2.2.3) (2026-10-13)
+
+
+### Bug Fixes
+
+* **coordinator:** keep a shared dosage relay active if any channel uses it ([8250ec3](https://github.com/ylabonte/proconip-hass/commit/8250ec33fc04d178e83be7e550d0c3f6e28c9528))
+* **coordinator:** reload when the dosing configuration changes ([84709f8](https://github.com/ylabonte/proconip-hass/commit/84709f8b6898d90612b04d89a08843f6da107726))
+* **number:** manage the dosage countdown task's lifecycle ([34d3cb7](https://github.com/ylabonte/proconip-hass/commit/34d3cb7e0201f4d7c5eef76d611e80ced6eab527))
+* **number:** mirror the controller's manual-dosing limits ([ebdd5dc](https://github.com/ylabonte/proconip-hass/commit/ebdd5dcf92c72fd80eafc62e024e4685503d88e2)), closes [#91](https://github.com/ylabonte/proconip-hass/issues/91)
+* **number:** route a dosage relay to its first enabled channel ([8334ed1](https://github.com/ylabonte/proconip-hass/commit/8334ed1e29cbe022dd5ffa2b6205763fe11eef64))
+* **select:** explain why a relay reserved for dosing can't be set to on ([c784919](https://github.com/ylabonte/proconip-hass/commit/c78491965594e82b72ba582960b9f74a0b30416c))
+* **sensor:** stop labelling the electrolysis cell as a chlorine canister ([#90](https://github.com/ylabonte/proconip-hass/issues/90)) ([28fd3b1](https://github.com/ylabonte/proconip-hass/commit/28fd3b1e010b980a618dcd6294cd9e31b74a4756))
+* **switch:** explain why a relay reserved for dosing can't be switched on ([ea58df5](https://github.com/ylabonte/proconip-hass/commit/ea58df53afdf92358196699a082691f4e21de499))
+* **switch:** refuse to switch an active dosage relay on permanently ([09dfc17](https://github.com/ylabonte/proconip-hass/commit/09dfc1733de4850be21321efced76f450491e053))
+
 ## [2.2.2](https://github.com/ylabonte/proconip-hass/compare/v2.2.1...v2.2.2) (2026-10-08)
 
 
