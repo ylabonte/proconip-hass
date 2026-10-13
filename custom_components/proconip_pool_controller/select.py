@@ -6,8 +6,10 @@ from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
+from proconip import BadRelayException
 
 from .const import DOMAIN, PROBLEM_SEVERITY_OPTIONS
 from .coordinator import ProconipPoolControllerDataUpdateCoordinator
@@ -94,7 +96,18 @@ class ProconipPoolControllerRelaySelect(ProconipPoolControllerEntity, SelectEnti
         if option == "auto":
             await self.coordinator.client.async_switch_to_auto(relay_id=self._relay_id)
         elif option == "on":
-            await self.coordinator.client.async_switch_on(relay_id=self._relay_id)
+            try:
+                await self.coordinator.client.async_switch_on(relay_id=self._relay_id)
+            except BadRelayException as exception:
+                # Active dosage relays never offer "on"; this is a relay that only
+                # a *disabled* dosage channel points at, which the library refuses
+                # as well (its check ignores the enable flags). Same hint as the
+                # relay switch.
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="relay_reserved_for_dosage",
+                    translation_placeholders={"relay_no": str(self._relay_id + 1)},
+                ) from exception
         else:
             await self.coordinator.client.async_switch_off(relay_id=self._relay_id)
         await self.coordinator.async_request_refresh()
